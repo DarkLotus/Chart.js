@@ -12,7 +12,7 @@
     var options = {
       inGraphDataShow : true,
       datasetFill : true,
-      scaleLabel: "<%=value%>",
+      scaleLabel: "<%= value.toLocaleString() %>",
       scaleTickSizeRight : 5,
       scaleTickSizeLeft : 5,
       scaleTickSizeBottom : 5,
@@ -65,6 +65,7 @@
       yAxisUnitFontStyle : "normal",
       yAxisUnitFontColor : "#666",
       annotateDisplay : true,
+      annotateLabel : "<%= v6.toLocaleString() %>" ,
       spaceTop : 0,
       spaceBottom : 0,
       spaceLeft : 0,
