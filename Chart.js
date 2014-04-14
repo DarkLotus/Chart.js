@@ -237,7 +237,6 @@ function doMouseMove(ctx,config,event){
 								v12=jsGraphAnnotate[ctx.canvas.id][i][6];      // v12=stop angle;
 								v13=jsGraphAnnotate[ctx.canvas.id][i][7];      // v13=position in Data;
 
-
 								graphPosX=canvas_pos.x;
 								graphPosY=canvas_pos.y;
 
@@ -306,6 +305,7 @@ function doMouseMove(ctx,config,event){
 								v10=jsGraphAnnotate[ctx.canvas.id][i][2];       // v10=pos Y of point;
 								v11=jsGraphAnnotate[ctx.canvas.id][i][10];      // v11=position in Dataset;
 								v12=jsGraphAnnotate[ctx.canvas.id][i][11];      // v12=position in Dataset[v11].Data;
+								v13=jsGraphAnnotate[ctx.canvas.id][i][12];      // v13=Tooltip label
 
 
 
@@ -2023,6 +2023,7 @@ window.Chart = function(context){
 				graphMin : config.scaleStartValue,
 				labels : []
 			}
+
 			populateLabels(labelTemplateString, calculatedScale.labels,calculatedScale.steps,config.scaleStartValue,config.scaleStepWidth);
 			msr=setMeasures(data,config,ctx,height,width,calculatedScale.labels,false,false,true,true);
 		}
@@ -2073,7 +2074,7 @@ window.Chart = function(context){
 					if(typeof(data.labels[0])=="string")lgtxt2=data.labels[0].trim();
 					else lgtxt2="";
 
-					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",yAxisPosX,xAxisPosY - (calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)),lgtxt,lgtxt2,data.datasets[i].data[0],divprev,divnext,maxvalue[0],totvalue[0],i,0];
+					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",yAxisPosX,xAxisPosY - (calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)),lgtxt,lgtxt2,data.datasets[i].data[0],divprev,divnext,maxvalue[0],totvalue[0],i,0,data.tooltips[i]];
 				}
 				for (var j=1; j<data.datasets[i].data.length; j++){
 					if (config.bezierCurve){
@@ -2092,7 +2093,7 @@ window.Chart = function(context){
 
 						if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 						else lgtxt2="";
-						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j];
+						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j,data.tooltips[i]];
 					}
 
 				}
