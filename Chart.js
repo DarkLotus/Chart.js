@@ -2093,7 +2093,7 @@ window.Chart = function(context){
 
 						if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 						else lgtxt2="";
-						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j,data.tooltips[i]];
+						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j,data.tooltips[j]];
 					}
 
 				}
