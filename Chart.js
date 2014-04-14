@@ -1461,13 +1461,14 @@ window.Chart = function(context){
 				startAngle += angleStep;
 				cumvalue +=data[i].value;
 
-				if(animationDecimal>=1)
+				if(config.annotateDisplay===true && animationDecimal>=1)
 				{
 					if(typeof(data[i].title)=="string")lgtxt=data[i].title.trim();
 					else lgtxt="";
 
 					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["ARC",midPosX,midPosY,0,calculateOffset(data[i].value,calculatedScale,scaleHop),startAngle - angleStep,startAngle,lgtxt,data[i].value,cumvalue,totvalue,angleStep,i];
 				}
+
 				if(config.segmentShowStroke){
 					ctx.strokeStyle = config.segmentStrokeColor;
 					ctx.lineWidth = config.segmentStrokeWidth;
@@ -1619,7 +1620,7 @@ window.Chart = function(context){
 
 				ctx.moveTo(0,animationDecimal*(-1*calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)));
 
-				if(animationDecimal>=1)
+				if(config.annotateDisplay===true && animationDecimal>=1)
 				{
 					if(i==0)divprev=0;
 					else divprev= data.datasets[i].data[0]-data.datasets[i-1].data[0];
@@ -1635,7 +1636,7 @@ window.Chart = function(context){
 					ctx.rotate(rotationDegree);
 					ctx.lineTo(0,animationDecimal*(-1*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)));
 
-					if(animationDecimal>=1)
+					if(config.annotateDisplay===true && animationDecimal>=1)
 					{
 						if(i==0)divprev=0;
 						else divprev= data.datasets[i].data[j]-data.datasets[i-1].data[j];
@@ -1882,7 +1883,7 @@ window.Chart = function(context){
 				cumulativeAngle += segmentAngle;
 				cumvalue +=data[i].value;
 
-				if(animationDecimal>=1)
+				if(config.annotateDisplay===true && animationDecimal>=1)
 				{
 					if(typeof(data[i].title)=="string")lgtxt=data[i].title.trim();
 					else lgtxt="";
@@ -1968,7 +1969,7 @@ window.Chart = function(context){
 				cumvalue +=data[i].value;
 
 
-				if(animationDecimal>=1)
+				if(config.annotateDisplay===true && animationDecimal>=1)
 				{
 					if(typeof(data[i].title)=="string")lgtxt=data[i].title.trim();
 					else lgtxt="";
@@ -2064,7 +2065,7 @@ window.Chart = function(context){
 				ctx.beginPath();
 				ctx.moveTo(yAxisPosX, xAxisPosY - animPc*(calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)));
 
-				if(animPc>=1)
+				if(config.annotateDisplay===true && animPc>=1)
 				{
 					if(i==0)divprev=data.datasets[i].data[0];
 					else divprev= data.datasets[i].data[0]-data.datasets[i-1].data[0];
@@ -2083,6 +2084,7 @@ window.Chart = function(context){
 
 					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",yAxisPosX,xAxisPosY - (calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)),lgtxt,lgtxt2,data.datasets[i].data[0],divprev,divnext,maxvalue[0],totvalue[0],i,0,tooltip];
 				}
+
 				for (var j=1; j<data.datasets[i].data.length; j++){
 					if (config.bezierCurve){
 						ctx.bezierCurveTo(xPos(j-0.5),yPos(i,j-1),xPos(j-0.5),yPos(i,j),xPos(j),yPos(i,j));
@@ -2091,7 +2093,7 @@ window.Chart = function(context){
 						ctx.lineTo(xPos(j),yPos(i,j));
 					}
 
-					if(animPc>=1)
+					if(config.annotateDisplay===true && animPc>=1)
 					{
 						if(i==0)divprev=data.datasets[i].data[j];
 						else divprev= data.datasets[i].data[j]-data.datasets[i-1].data[j];
@@ -2355,12 +2357,14 @@ window.Chart = function(context){
 						ctx.fill();
 
 						cumvalue[j] +=data.datasets[i].data[j];
-						if(animPc>=1)
+
+						if(config.annotateDisplay===true && animPc>=1)
 						{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["RECT",barOffset,xAxisPosY,barOffset+barWidth,xAxisPosY - calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2),lgtxt,lgtxt2,data.datasets[i].data[j],cumvalue[j],totvalue[j],i,j];
 						}
+
 						yStart[j] = animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)-(config.barStrokeWidth/2)
 
 
@@ -2380,7 +2384,7 @@ window.Chart = function(context){
 						ctx.fill();
 
 						cumvalue[j] +=data.datasets[i].data[j];
-						if(animPc>=1)
+						if(config.annotateDisplay===true && animPc>=1)
 						{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
@@ -2622,12 +2626,14 @@ window.Chart = function(context){
 						ctx.fill();
 
 						cumvalue[j] +=data.datasets[i].data[j];
-						if(animPc>=1)
+
+						if(config.annotateDisplay===true && animPc>=1)
 						{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["RECT",yAxisPosX,barOffset+barWidth,yAxisPosX+HorizontalCalculateOffset(data.datasets[i].data[j],calculatedScale,valueHop)+(config.barStrokeWidth/2),barOffset,lgtxt,lgtxt2,data.datasets[i].data[j],cumvalue[j],totvalue[j],i,j];
 						}
+
 						yStart[j] = animPc*HorizontalCalculateOffset(data.datasets[i].data[j],calculatedScale,valueHop)+(config.barStrokeWidth/2);
 
 
@@ -2652,12 +2658,14 @@ window.Chart = function(context){
 						ctx.fill();
 
 						cumvalue[j] +=data.datasets[i].data[j];
-						if(animPc>=1)
+
+						if(config.annotateDisplay===true && animPc>=1)
 						{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["RECT",yAxisPosX+yStart[j]+1,barOffset+barWidth,yAxisPosX+yStart[j]+HorizontalCalculateOffset(calculatedScale.graphMin+data.datasets[i].data[j],calculatedScale,valueHop)+(config.barStrokeWidth/2),barOffset,lgtxt,lgtxt2,data.datasets[i].data[j],cumvalue[j],totvalue[j],i,j];
 						}
+
 						yStart[j] += animPc*HorizontalCalculateOffset(calculatedScale.graphMin+data.datasets[i].data[j],calculatedScale,valueHop)+(config.barStrokeWidth/2);
 
 
@@ -2876,14 +2884,17 @@ window.Chart = function(context){
 					ctx.lineTo(barOffset, xAxisPosY - animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2));
 					ctx.lineTo(barOffset + barWidth, xAxisPosY - animPc*calculateOffset(data.datasets[i].data[j],calculatedScale,scaleHop)+(config.barStrokeWidth/2));
 					ctx.lineTo(barOffset + barWidth, xAxisPosY);
+
 					if(config.barShowStroke){
 						ctx.stroke();
 					}
+
 					ctx.closePath();
 					ctx.fill();
 
 					cumvalue[j] +=data.datasets[i].data[j];
-					if(animPc>=1)
+
+					if(config.annotateDisplay===true && animPc>=1)
 					{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
@@ -3094,11 +3105,13 @@ window.Chart = function(context){
 					if(config.barShowStroke){
 						ctx.stroke();
 					}
+
 					ctx.closePath();
 					ctx.fill();
 
 					cumvalue[j] +=data.datasets[i].data[j];
-					if(animPc>=1)
+
+					if(config.annotateDisplay===true && animPc>=1)
 					{
 							if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 							else lgtxt2="";
