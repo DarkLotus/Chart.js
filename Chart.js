@@ -2046,6 +2046,7 @@ window.Chart = function(context){
 
 			var totvalue=new Array();
 			var maxvalue=new Array();
+			var tooltip;
 
 			for (var i=0; i<data.datasets.length; i++){for (var j=0; j<data.datasets[i].data.length; j++){totvalue[j]=0;maxvalue[j]=-999999999;} }
 			for (var i=0; i<data.datasets.length; i++){for (var j=0; j<data.datasets[i].data.length; j++){totvalue[j]+=data.datasets[i].data[j];maxvalue[j]=Max( [maxvalue[j],data.datasets[i].data[j]]);} }
@@ -2074,7 +2075,13 @@ window.Chart = function(context){
 					if(typeof(data.labels[0])=="string")lgtxt2=data.labels[0].trim();
 					else lgtxt2="";
 
-					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",yAxisPosX,xAxisPosY - (calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)),lgtxt,lgtxt2,data.datasets[i].data[0],divprev,divnext,maxvalue[0],totvalue[0],i,0,data.tooltips[i]];
+					if (data.tooltips && data.tooltips.length && data.tooltips[i]) {
+						tooltip = data.tooltips[i];
+					} else {
+						tooltip = '';
+					}
+
+					jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",yAxisPosX,xAxisPosY - (calculateOffset(data.datasets[i].data[0],calculatedScale,scaleHop)),lgtxt,lgtxt2,data.datasets[i].data[0],divprev,divnext,maxvalue[0],totvalue[0],i,0,tooltip];
 				}
 				for (var j=1; j<data.datasets[i].data.length; j++){
 					if (config.bezierCurve){
@@ -2093,7 +2100,14 @@ window.Chart = function(context){
 
 						if(typeof(data.labels[j])=="string")lgtxt2=data.labels[j].trim();
 						else lgtxt2="";
-						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j,data.tooltips[j]];
+
+						if (data.tooltips && data.tooltips.length && data.tooltips[j]) {
+							tooltip = data.tooltips[j];
+						} else {
+							tooltip = '';
+						}
+
+						jsGraphAnnotate[ctx.canvas.id][annotateCnt++]=["POINT",xPos(j),yPos(i,j),lgtxt,lgtxt2,data.datasets[i].data[j],divprev,divnext,maxvalue[j],totvalue[j],i,j,tooltip];
 					}
 
 				}
