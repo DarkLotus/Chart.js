@@ -173,17 +173,19 @@ function cursorInit(){
 /********************************************************************
 Contructs the cursorobjects
 *********************************************************************/
-function makeCursorObj(obj,nest) {
-	createCursorDiv();
+function makeCursorObj(obj, nest) {
 
-	nest = (!nest) ? '' : 'document.' + nest + '.'
-	this.css = bw.dom ? document.getElementById(obj).style : bw.ie4 ? document.all[obj].style : bw.ns4 ? eval(nest + "document.layers." + obj) : 0;
-	this.moveIt = b_moveIt;
+  createCursorDiv();
 
-	cursorInit();
+  nest = (!nest) ? '' : 'document.' + nest + '.'
+  this.css = bw.dom ? document.getElementById(obj).style : bw.ie4 ? document.all[obj].style : bw.ns4 ? eval(nest + "document.layers." + obj) : 0;
+  this.moveIt = b_moveIt;
 
-	return this;
-};
+  cursorInit();
+
+  return this
+} ;
+
 
 function b_moveIt(x,y) {
 	this.x = x;
