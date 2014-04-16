@@ -200,7 +200,7 @@ function getMousePos(canvas, evt) {
 
 function doMouseMove(ctx,config,event){
 
-		 font="<font face="+config.annotateFontFamily+" size="+config.annotateFontSize+"px style=\"font-style:"+config.annotateFontStyle+";color:"+config.annotateFontColor+"\">";
+		 span='<span style="font-family:'+config.annotateFontFamily+';font-size:'+config.annotateFontSize+';font-style:'+config.annotateFontStyle+';color:'+config.annotateFontColor+'">';
 
 		 document.getElementById('divCursor').innerHTML="";
 		 document.getElementById('divCursor').style.border="";
@@ -241,7 +241,7 @@ function doMouseMove(ctx,config,event){
 								graphPosY=canvas_pos.y;
 
 								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, v13:v13, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=font+dispString+"</font>";
+								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
 
 								x=bw.ns4 || bw.ns5?event.pageX:event.x ;
 								y=bw.ns4 || bw.ns5?event.pageY:event.y ;
@@ -274,7 +274,7 @@ function doMouseMove(ctx,config,event){
 								graphPosY=canvas_pos.y;
 
 								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=font+dispString+"</font>";
+								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
 
 
 
@@ -314,7 +314,7 @@ function doMouseMove(ctx,config,event){
 
 
 								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=font+dispString+"</font>";
+								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
 
 
 								x=bw.ns4 || bw.ns5?event.pageX:event.x ;
