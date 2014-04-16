@@ -1416,7 +1416,7 @@ window.Chart = function (context) {
 				startAngle += angleStep;
 				cumvalue += data[i].value;
 
-				if (animationDecimal >= 1) {
+				if (config.annotateDisplay === true && animationDecimal >= 1) {
 					if (typeof (data[i].title) == "string") lgtxt = data[i].title.trim();
 					else lgtxt = "";
 
@@ -1574,7 +1574,7 @@ window.Chart = function (context) {
 
 				ctx.moveTo(0, animationDecimal * (-1 * calculateOffset(config, data.datasets[i].data[0], calculatedScale, scaleHop)));
 
-				if (animationDecimal >= 1) {
+				if (config.annotateDisplay === true && animationDecimal >= 1) {
 					if (i == 0) divprev = 0;
 					else divprev = data.datasets[i].data[0] - data.datasets[i - 1].data[0];
 					if (i == data.datasets.length - 1) divnext = 0;
@@ -1588,7 +1588,7 @@ window.Chart = function (context) {
 					ctx.rotate(rotationDegree);
 					ctx.lineTo(0, animationDecimal * (-1 * calculateOffset(config, data.datasets[i].data[j], calculatedScale, scaleHop)));
 
-					if (animationDecimal >= 1) {
+					if (config.annotateDisplay === true && animationDecimal >= 1) {
 						if (i == 0) divprev = 0;
 						else divprev = data.datasets[i].data[j] - data.datasets[i - 1].data[j];
 						if (i == data.datasets.length - 1) divnext = 0;
@@ -1905,10 +1905,13 @@ window.Chart = function (context) {
 				}
 
 				if (animationDecimal >= 1) {
+
 					if (typeof (data[i].title) == "string") lgtxt = data[i].title.trim();
 					else lgtxt = "";
-					jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["ARC", midPieX, midPieY, 0, pieRadius, cumulativeAngle - segmentAngle, cumulativeAngle, lgtxt, data[i].value, cumvalue, totvalue, segmentAngle, i];
 
+					if (config.annotateDisplay === true) {
+						jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["ARC", midPieX, midPieY, 0, pieRadius, cumulativeAngle - segmentAngle, cumulativeAngle, lgtxt, data[i].value, cumvalue, totvalue, segmentAngle, i];
+					}
 
 					if (config.inGraphDataShow) {
 
@@ -2110,7 +2113,10 @@ window.Chart = function (context) {
 					if (typeof (data[i].title) == "string") lgtxt = data[i].title.trim();
 					else lgtxt = "";
 
-					jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["ARC", midPieX, midPieY, cutoutRadius, doughnutRadius, cumulativeAngle - segmentAngle, cumulativeAngle, lgtxt, data[i].value, cumvalue, totvalue, segmentAngle, i];
+					if (config.annotateDisplay === true) {
+						jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["ARC", midPieX, midPieY, cutoutRadius, doughnutRadius, cumulativeAngle - segmentAngle, cumulativeAngle, lgtxt, data[i].value, cumvalue, totvalue, segmentAngle, i];
+					}
+
 					if (config.inGraphDataShow) {
 
 						 if(config.inGraphDataAnglePosition==1)posAngle=realCumulativeAngle+config.inGraphDataPaddingAngle*(Math.PI/180);
@@ -2350,7 +2356,9 @@ window.Chart = function (context) {
 								tooltip = '';
 							}
 
-							jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["POINT", xPos(j), yPos(i, j), lgtxt, lgtxt2, data.datasets[i].data[j], divprev, divnext, maxvalue[j], totvalue[j], i, j, tooltip];
+							if (config.annotateDisplay === true) {
+								jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["POINT", xPos(j), yPos(i, j), lgtxt, lgtxt2, data.datasets[i].data[j], divprev, divnext, maxvalue[j], totvalue[j], i, j, tooltip];
+							}
 
 							if (config.inGraphDataShow) {
 							  ctx.save();
@@ -2634,7 +2642,7 @@ window.Chart = function (context) {
 						ctx.fill();
 
 						cumvalue[j] += data.datasets[i].data[j];
-						if (animPc >= 1) {
+						if (config.annotateDisplay === true && animPc >= 1) {
 							if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 							else lgtxt2 = "";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["RECT", barOffset, xAxisPosY, barOffset + barWidth, xAxisPosY - calculateOffset(config, data.datasets[i].data[j], calculatedScale, scaleHop) + (config.barStrokeWidth / 2), lgtxt, lgtxt2, data.datasets[i].data[j], cumvalue[j], totvalue[j], i, j];
@@ -2656,7 +2664,7 @@ window.Chart = function (context) {
 						ctx.fill();
 
 						cumvalue[j] += data.datasets[i].data[j];
-						if (animPc >= 1) {
+						if (config.annotateDisplay === true && animPc >= 1) {
 							if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 							else lgtxt2 = "";
 
@@ -2986,7 +2994,7 @@ window.Chart = function (context) {
 						ctx.fill();
 
 						cumvalue[j] += data.datasets[i].data[j];
-						if (animPc >= 1) {
+						if (config.annotateDisplay === true && animPc >= 1) {
 							if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 							else lgtxt2 = "";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["RECT", yAxisPosX, barOffset + barWidth, yAxisPosX + HorizontalCalculateOffset(data.datasets[i].data[j], calculatedScale, valueHop) + (config.barStrokeWidth / 2), barOffset, lgtxt, lgtxt2, data.datasets[i].data[j], cumvalue[j], totvalue[j], i, j];
@@ -3009,7 +3017,7 @@ window.Chart = function (context) {
 						ctx.fill();
 
 						cumvalue[j] += data.datasets[i].data[j];
-						if (animPc >= 1) {
+						if (config.annotateDisplay === true && animPc >= 1) {
 							if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 							else lgtxt2 = "";
 							jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["RECT", yAxisPosX + yStart[j] + 1, barOffset + barWidth, yAxisPosX + yStart[j] + HorizontalCalculateOffset(calculatedScale.graphMin + data.datasets[i].data[j], calculatedScale, valueHop) + (config.barStrokeWidth / 2), barOffset, lgtxt, lgtxt2, data.datasets[i].data[j], cumvalue[j], totvalue[j], i, j];
@@ -3340,7 +3348,7 @@ window.Chart = function (context) {
 					ctx.fill();
 
 					cumvalue[j] += data.datasets[i].data[j];
-					if (animPc >= 1) {
+					if (config.annotateDisplay === true && animPc >= 1) {
 						if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 						else lgtxt2 = "";
 						t1 = xAxisPosY - zeroY;
@@ -3616,7 +3624,7 @@ window.Chart = function (context) {
 					ctx.fill();
 
 					cumvalue[j] += data.datasets[i].data[j];
-					if (animPc >= 1) {
+					if (config.annotateDisplay === true && animPc >= 1) {
 						if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
 						else lgtxt2 = "";
 						t1 = yAxisPosX + zeroY;
