@@ -208,10 +208,10 @@ fromTop = 10; // How much from the top of the cursor should the div be?
 Initilizes the objects
 *********************************************************************/
 
-function cursorInit(){
+function cursorInit() {
 	scrolled = bw.ns4 || bw.ns5 ? "window.pageYOffset" : "document.body.scrollTop"
 	if (bw.ns4) document.captureEvents(Event.MOUSEMOVE)
-}
+} ;
 /********************************************************************
 Contructs the cursorobjects
 *********************************************************************/
@@ -227,9 +227,9 @@ function makeCursorObj(obj, nest) {
 
   return this
 } ;
+function b_moveIt(x, y) {
 
 
-function b_moveIt(x,y) {
 	this.x = x;
 	this.y = y;
 	this.css.left = this.x + "px";
@@ -244,162 +244,302 @@ function isIE () {
 	return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
 };
 
+function mergeChartConfig(defaults, userDefined) {
+  var returnObj = {};
+  for (var attrname in defaults) { returnObj[attrname] = defaults[attrname]; }
+  for (var attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
+  return returnObj;
+};
 
+function sleep(ms){
+	var dt = new Date();
+	dt.setTime(dt.getTime() + ms);
+	while (new Date().getTime() < dt.getTime());
+} ;
 
-// if(isIE() <9 && isIE()!= false) {
+function saveCanvas(ctx,data,config,tpgraph) {
+		cvSave = ctx.getImageData(0,0,ctx.canvas.width, ctx.canvas.height);
 
-	if (typeof String.prototype.trim !== 'function') {
-		String.prototype.trim = function () {
-			return this.replace(/^\s+|\s+$/g, '');
+		var saveCanvasConfig = {
+		  savePng : false,
+		  annotateDisplay : false,
+		  animation : false,
+		  dynamicDisplay : false
+		};
+
+		var savePngConfig = mergeChartConfig(config, saveCanvasConfig);
+
+		savePngConfig.clearRect = false;
+
+		/* And ink them */
+
+		switch(tpgraph){
+		  case "Bar":
+			 new Chart(ctx.canvas.getContext("2d")).Bar(data,savePngConfig);
+			 break;
+		  case "Pie":
+			 new Chart(ctx.canvas.getContext("2d")).Pie(data,savePngConfig);
+			 break;
+		  case "Doughnut":
+			 new Chart(ctx.canvas.getContext("2d")).Doughnut(data,savePngConfig);
+			 break;
+		  case "Radar":
+			 new Chart(ctx.canvas.getContext("2d")).Radar(data,savePngConfig);
+			 break;
+		  case "PolarArea":
+			 new Chart(ctx.canvas.getContext("2d")).PolarArea(data,savePngConfig);
+			 break;
+		  case "HorizontalBar":
+			 new Chart(ctx.canvas.getContext("2d")).HorizontalBar(data,savePngConfig);
+			 break;
+		  case "StackedBar":
+			 new Chart(ctx.canvas.getContext("2d")).StackedBar(data,savePngConfig);
+			 break;
+		  case "HorizontalStackedBar":
+			 new Chart(ctx.canvas.getContext("2d")).HorizontalStackedBar(data,savePngConfig);
+			 break;
+		  case "Line":
+			 new Chart(ctx.canvas.getContext("2d")).Line(data,savePngConfig);
+			 break;
 		}
+
+		document.location.href= ctx.canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+		ctx.putImageData(cvSave,0,0);
+
+} ;
+
+
+//if (isIE() < 9 && isIE() != false) {
+
+  if (typeof String.prototype.trim !== 'function') {
+	String.prototype.trim = function () {
+	  return this.replace(/^\s+|\s+$/g, '');
 	}
-// }
+  };
+//};
+
+var dynamicDisplay = new Array();
+var dynamicDisplayList = new Array();
+
+function dynamicFunction(data,config,ctx,tpgraph){
+		if(config.dynamicDisplay)
+		{
+		   if(typeof(dynamicDisplay[ctx.canvas.id])=="undefined")
+		   {
+			  dynamicDisplayList[dynamicDisplayList["length"]]=ctx.canvas.id;
+			  dynamicDisplay[ctx.canvas.id]=[ctx.canvas,false,false,data,config,ctx.canvas,tpgraph];
+			  dynamicDisplay[ctx.canvas.id][1]=isScrolledIntoView(ctx.canvas);
+			  window.onscroll = scrollFunction;
+		   }
+		   if(dynamicDisplay[ctx.canvas.id][1]==false || dynamicDisplay[ctx.canvas.id][2]==true)return false;
+		   dynamicDisplay[ctx.canvas.id][2]=true;
+		}
+		return true;
+} ;
+
+function isScrolledIntoView(element){
+	var xPosition = 0;
+	var yPosition = 0;
+
+	elem=element;
+	while(elem) {
+		xPosition += (elem.offsetLeft - elem.scrollLeft + elem.clientLeft);
+		yPosition += (elem.offsetTop - elem.scrollTop + elem.clientTop);
+		elem = elem.offsetParent;
+	}
+
+	if (xPosition+element.width/2 >= window.pageXOffset &&
+		xPosition+element.width/2 <= window.pageXOffset + window.innerWidth &&
+		yPosition+element.height/2 >= window.pageYOffset &&
+		yPosition+element.height/2 <= window.pageYOffset+window.innerHeight
+		)return(true);
+	else return false;
+};
+
+function scrollFunction(){
+	for (var i=0;i<dynamicDisplayList["length"];i++) {
+	  if (isScrolledIntoView(dynamicDisplay[dynamicDisplayList[i]][5]) && dynamicDisplay[dynamicDisplayList[i]][2]==false) {
+		dynamicDisplay[dynamicDisplayList[i]][1]=true;
+		switch(dynamicDisplay[dynamicDisplayList[i]][6]){
+		  case "Bar":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).Bar(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "Pie":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).Pie(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "Doughnut":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).Doughnut(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "Radar":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).Radar(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "PolarArea":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).PolarArea(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "HorizontalBar":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).HorizontalBar(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "StackedBar":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).StackedBar(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "HorizontalStackedBar":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).HorizontalStackedBar(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		  case "Line":
+			 new Chart(document.getElementById(dynamicDisplayList[i]).getContext("2d")).Line(dynamicDisplay[dynamicDisplayList[i]][3],dynamicDisplay[dynamicDisplayList[i]][4]);
+			 break;
+		}
+	  }
+	}
+};
+
+
 
 var jsGraphAnnotate = new Array();
 
 function getMousePos(canvas, evt) {
-	var rect = canvas.getBoundingClientRect();
-	return {
-		x: evt.clientX - rect.left,
-		y: evt.clientY - rect.top
-	};
+  var rect = canvas.getBoundingClientRect();
+  return {
+	x: evt.clientX - rect.left,
+	y: evt.clientY - rect.top
+  };
 };
 
 function doMouseMove(ctx, config, event) {
 
-	font = "<font face=" + config.annotateFontFamily + " size=" + config.annotateFontSize + "px style=\"font-style:" + config.annotateFontStyle + ";color:" + config.annotateFontColor + "\">";
+  font = "<font face=" + config.annotateFontFamily + " size=" + config.annotateFontSize + "px style=\"font-style:" + config.annotateFontStyle + ";color:" + config.annotateFontColor + "\">";
 
-	var annotateDIV = document.getElementById('divCursor');
+  var annotateDIV = document.getElementById('divCursor');
 
-	annotateDIV.innerHTML = "";
-	annotateDIV.style.border = "";
-	annotateDIV.style.backgroundColor = "";
+  annotateDIV.innerHTML = "";
+  annotateDIV.style.border = "";
+  annotateDIV.style.backgroundColor = "";
 
-	canvas_pos = getMousePos(ctx.canvas, event);
-	for (i = 0; i < jsGraphAnnotate[ctx.canvas.id]["length"]; i++) {
+  canvas_pos = getMousePos(ctx.canvas, event);
+  for (i = 0; i < jsGraphAnnotate[ctx.canvas.id]["length"]; i++) {
 
-		if (jsGraphAnnotate[ctx.canvas.id][i][0] == "ARC") {
-			distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
-			if (distance > jsGraphAnnotate[ctx.canvas.id][i][3] && distance < jsGraphAnnotate[ctx.canvas.id][i][4]) {
+	if (jsGraphAnnotate[ctx.canvas.id][i][0] == "ARC") {
+	  distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
+	  if (distance > jsGraphAnnotate[ctx.canvas.id][i][3] && distance < jsGraphAnnotate[ctx.canvas.id][i][4]) {
 
-				angle = Math.acos((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) / distance);
-				if (canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2]) angle = -angle;
+		angle = Math.acos((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) / distance);
+		if (canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2]) angle = -angle;
 
-				while (angle < 0){angle+=2*Math.PI;}
-				while (angle > 2*Math.PI){angle-=2*Math.PI;}
-				if(angle<config.startAngle*(Math.PI/360))angle+=2*Math.PI;
+		while (angle < 0){angle+=2*Math.PI;}
+		while (angle > 2*Math.PI){angle-=2*Math.PI;}
+		if(angle<config.startAngle*(Math.PI/360))angle+=2*Math.PI;
 
-				if ((angle > jsGraphAnnotate[ctx.canvas.id][i][5] && angle < jsGraphAnnotate[ctx.canvas.id][i][6]) || (angle > jsGraphAnnotate[ctx.canvas.id][i][5]-2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]-2*Math.PI)|| (angle > jsGraphAnnotate[ctx.canvas.id][i][5]+2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]+2*Math.PI)) {
+		if ((angle > jsGraphAnnotate[ctx.canvas.id][i][5] && angle < jsGraphAnnotate[ctx.canvas.id][i][6]) || (angle > jsGraphAnnotate[ctx.canvas.id][i][5]-2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]-2*Math.PI)|| (angle > jsGraphAnnotate[ctx.canvas.id][i][5]+2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]+2*Math.PI)) {
 
-					annotateDIV.style.border = config.annotateBorder;
-					annotateDIV.style.padding = config.annotatePadding;
-					annotateDIV.style.borderRadius = config.annotateBorderRadius;
-					annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
+		  annotateDIV.style.border = config.annotateBorder;
+		  annotateDIV.style.padding = config.annotatePadding;
+		  annotateDIV.style.borderRadius = config.annotateBorderRadius;
+		  annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
 
-					v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV1);       // V1=Label
-					v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV2);       // V2=Data Value
-					v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV3);       // V3=Cumulated Value
-					v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV4);      // V4=Total Data Value
-					v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV5);      // V5=Angle
-					v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][8] / jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV6);                                  // v6=Percentage;
-					v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=midPointX of arc;
-					v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=midPointY of arc;
-					v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=radius Minimum;
-					v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=radius Maximum;
-					v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV11);      // v11=start angle;
-					v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV12);      // v12=stop angle;
-					v13 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][12],config.fmtV13);      // v13=position in Data;
+		  v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV1);       // V1=Label
+		  v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV2);       // V2=Data Value
+		  v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV3);       // V3=Cumulated Value
+		  v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV4);      // V4=Total Data Value
+		  v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV5);      // V5=Angle
+		  v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][8] / jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV6);                                  // v6=Percentage;
+		  v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=midPointX of arc;
+		  v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=midPointY of arc;
+		  v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=radius Minimum;
+		  v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=radius Maximum;
+		  v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV11);      // v11=start angle;
+		  v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV12);      // v12=stop angle;
+		  v13 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][12],config.fmtV13);      // v13=position in Data;
 
-					graphPosX = canvas_pos.x;
-					graphPosY = canvas_pos.y;
+		  graphPosX = canvas_pos.x;
+		  graphPosY = canvas_pos.y;
 
-					// create label text
-					dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, v13: v13, graphPosX: graphPosX, graphPosY: graphPosY });
-					annotateDIV.innerHTML = font + dispString + "</font>";
+		  // create label text
+		  dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, v13: v13, graphPosX: graphPosX, graphPosY: graphPosY });
+		  annotateDIV.innerHTML = font + dispString + "</font>";
 
 
-					x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
-					y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
-					if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
-					oCursor.moveIt(x + fromLeft, y + fromTop);
-				}
-			}
-		} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "RECT") {
-			if (canvas_pos.x > jsGraphAnnotate[ctx.canvas.id][i][1] && canvas_pos.x < jsGraphAnnotate[ctx.canvas.id][i][3] && canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2] && canvas_pos.y > jsGraphAnnotate[ctx.canvas.id][i][4]) {
-
-				annotateDIV.style.border = config.annotateBorder;
-				annotateDIV.style.padding = config.annotatePadding;
-				annotateDIV.style.borderRadius = config.annotateBorderRadius;
-				annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
-
-				v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV1);       // V1=Label1
-				v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV2);       // V2=Label2
-				v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV3);       // V3=Data Value
-				v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV4);       // V4=Cumulated Value
-				v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV5);      // V5=Total Data Value
-				v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][7] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV6);                                  // v6=Percentage;
-				v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=top X of rectangle;
-				v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=top Y of rectangle;
-				v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=bottom X of rectangle;
-				v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=bottom Y of rectangle;
-				v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
-				v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
-
-				graphPosX = canvas_pos.x;
-				graphPosY = canvas_pos.y;
-
-				dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
-				annotateDIV.innerHTML = font + dispString + "</font>";
-
-				x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
-				y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
-				if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
-				oCursor.moveIt(x + fromLeft, y + fromTop);
-			}
-
-		} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "POINT") {
-			distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
-			if (distance < 10) {
-
-				annotateDIV.style.border = config.annotateBorder;
-				annotateDIV.style.padding = config.annotatePadding;
-				annotateDIV.style.borderRadius = config.annotateBorderRadius;
-				annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
-
-				v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV1);       // V1=Label1
-				v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV2);       // V2=Label2
-				v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV3);       // V3=Data Value
-				v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV4);       // V4=Difference with Previous line
-				v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV5);      // V5=Difference with next line;
-				v6 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV6);      // V6=max;
-				v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV7);      // V7=Total;
-				v8 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][5] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV8);                                  // v8=percentage;
-				v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV9);       // v9=pos X of point;
-				v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV10);       // v10=pos Y of point;
-				v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
-				v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
-
-				graphPosX = canvas_pos.x;
-				graphPosY = canvas_pos.y;
-
-				dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
-				annotateDIV.innerHTML = font + dispString + "</font>";
-
-				x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
-				y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
-				if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
-				oCursor.moveIt(x + fromLeft, y + fromTop);
-
-			}
-
+		  x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+		  y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+		  if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+		  oCursor.moveIt(x + fromLeft, y + fromTop);
 		}
+	  }
+	} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "RECT") {
+	  if (canvas_pos.x > jsGraphAnnotate[ctx.canvas.id][i][1] && canvas_pos.x < jsGraphAnnotate[ctx.canvas.id][i][3] && canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2] && canvas_pos.y > jsGraphAnnotate[ctx.canvas.id][i][4]) {
+
+		annotateDIV.style.border = config.annotateBorder;
+		annotateDIV.style.padding = config.annotatePadding;
+		annotateDIV.style.borderRadius = config.annotateBorderRadius;
+		annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
+
+		v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV1);       // V1=Label1
+		v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV2);       // V2=Label2
+		v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV3);       // V3=Data Value
+		v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV4);       // V4=Cumulated Value
+		v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV5);      // V5=Total Data Value
+		v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][7] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV6);                                  // v6=Percentage;
+		v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=top X of rectangle;
+		v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=top Y of rectangle;
+		v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=bottom X of rectangle;
+		v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=bottom Y of rectangle;
+		v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
+		v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
+
+		graphPosX = canvas_pos.x;
+		graphPosY = canvas_pos.y;
+
+		dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
+		annotateDIV.innerHTML = font + dispString + "</font>";
+
+		x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+		y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+		if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+		oCursor.moveIt(x + fromLeft, y + fromTop);
+	  }
+
+	} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "POINT") {
+	  distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
+	  if (distance < 10) {
+
+		annotateDIV.style.border = config.annotateBorder;
+		annotateDIV.style.padding = config.annotatePadding;
+		annotateDIV.style.borderRadius = config.annotateBorderRadius;
+		annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
+
+		v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV1);       // V1=Label1
+		v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV2);       // V2=Label2
+		v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV3);       // V3=Data Value
+		v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV4);       // V4=Difference with Previous line
+		v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV5);      // V5=Difference with next line;
+		v6 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV6);      // V6=max;
+		v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV7);      // V7=Total;
+		v8 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][5] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV8);                                  // v8=percentage;
+		v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV9);       // v9=pos X of point;
+		v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV10);       // v10=pos Y of point;
+		v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
+		v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
+
+		graphPosX = canvas_pos.x;
+		graphPosY = canvas_pos.y;
+
+		dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
+		annotateDIV.innerHTML = font + dispString + "</font>";
+
+		x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+		y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+		if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+		oCursor.moveIt(x + fromLeft, y + fromTop);
+
+	  }
+
 	}
+  }
 
 };
 
 
 
-
+///////// GRAPHICAL PART OF THE SCRIPT ///////////////////////////////////////////
 
 
 
