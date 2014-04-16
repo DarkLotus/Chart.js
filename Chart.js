@@ -100,104 +100,97 @@ I will also appriciate any links you could give me.
 Distributed by Hypergurl
 ********************************************************************************/
 
-		var cachebis = {};
+var cachebis = {};
 
-		function tmplbis(str, data){
-			// Figure out if we're getting a template, or if we need to
-			// load the template - and be sure to cache the result.
-			var fn = !/\W/.test(str) ?
-				cachebis[str] = cachebis[str] ||
-					tmplbis(document.getElementById(str).innerHTML) :
+function tmplbis(str, data) {
+	// Figure out if we're getting a template, or if we need to
+	// load the template - and be sure to cache the result.
+	var fn = !/\W/.test(str) ?
+		cachebis[str] = cachebis[str] ||
+			tmplbis(document.getElementById(str).innerHTML) :
 
-				// Generate a reusable function that will serve as a template
-				// generator (and which will be cached).
-				new Function("obj",
-					"var p=[],print=function(){p.push.apply(p,arguments);};" +
+		// Generate a reusable function that will serve as a template
+		// generator (and which will be cached).
+		new Function("obj",
+			"var p=[],print=function(){p.push.apply(p,arguments);};" +
 
-					// Introduce the data as local variables using with(){}
-					"with(obj){p.push('" +
+			// Introduce the data as local variables using with(){}
+			"with(obj){p.push('" +
 
-					// Convert the template into pure JavaScript
-					str
-						.replace(/[\r\t\n]/g, " ")
-						.split("<%").join("\t")
-						.replace(/((^|%>)[^\t]*)'/g, "$1\r")
-						.replace(/\t=(.*?)%>/g, "',$1,'")
-						.split("\t").join("');")
-						.split("%>").join("p.push('")
-						.split("\r").join("\\'")
-				+ "');}return p.join('');");
+			// Convert the template into pure JavaScript
+			str
+				.replace(/[\r\t\n]/g, " ")
+				.split("<%").join("\t")
+				.replace(/((^|%>)[^\t]*)'/g, "$1\r")
+				.replace(/\t=(.*?)%>/g, "',$1,'")
+				.split("\t").join("');")
+				.split("%>").join("p.push('")
+				.split("\r").join("\\'")
+		+ "');}return p.join('');");
 
-			// Provide some basic currying to the user
-			return data ? fn( data ) : fn;
-		};
+	// Provide some basic currying to the user
+	return data ? fn(data) : fn;
+};
 
+cursorDivCreated = false;
 
-cursorDivCreated=false;
-
-function createCursorDiv()
-{
-	if(cursorDivCreated==false)
-	{
+function createCursorDiv() {
+	if (cursorDivCreated == false) {
 		var div = document.createElement('divCursor');
-		div.id='divCursor';
-		div.style.position='absolute';
+		div.id = 'divCursor';
+		div.style.position = 'absolute';
 		document.body.appendChild(div);
-		cursorDivCreated=true;
+		cursorDivCreated = true;
 	}
-}
+} ;
 
 
 //Default browsercheck, added to all scripts!
-function checkBrowser(){
-	this.ver=navigator.appVersion
-	this.dom=document.getElementById?1:0
-	this.ie5=(this.ver.indexOf("MSIE 5")>-1 && this.dom)?1:0;
-	this.ie4=(document.all && !this.dom)?1:0;
-	this.ns5=(this.dom && parseInt(this.ver) >= 5) ?1:0;
-	this.ns4=(document.layers && !this.dom)?1:0;
-	this.bw=(this.ie5 || this.ie4 || this.ns4 || this.ns5)
+function checkBrowser() {
+	this.ver = navigator.appVersion
+	this.dom = document.getElementById ? 1 : 0
+	this.ie5 = (this.ver.indexOf("MSIE 5") > -1 && this.dom) ? 1 : 0;
+	this.ie4 = (document.all && !this.dom) ? 1 : 0;
+	this.ns5 = (this.dom && parseInt(this.ver) >= 5) ? 1 : 0;
+	this.ns4 = (document.layers && !this.dom) ? 1 : 0;
+	this.bw = (this.ie5 || this.ie4 || this.ns4 || this.ns5)
 	return this
-}
-bw=new checkBrowser()
+};
+bw = new checkBrowser();
 
 //Set these variables:
-fromLeft=10 // How much from the left of the cursor should the div be?
-fromTop=10 // How much from the top of the cursor should the div be?
+fromLeft = 10; // How much from the left of the cursor should the div be?
+fromTop = 10; // How much from the top of the cursor should the div be?
 
 /********************************************************************
 Initilizes the objects
 *********************************************************************/
 
 function cursorInit(){
-
-	scrolled=bw.ns4 || bw.ns5?"window.pageYOffset":"document.body.scrollTop"
-	if(bw.ns4)document.captureEvents(Event.MOUSEMOVE)
+	scrolled = bw.ns4 || bw.ns5 ? "window.pageYOffset" : "document.body.scrollTop"
+	if (bw.ns4) document.captureEvents(Event.MOUSEMOVE)
 }
 /********************************************************************
 Contructs the cursorobjects
 *********************************************************************/
-function makeCursorObj(obj,nest){
-
+function makeCursorObj(obj,nest) {
 	createCursorDiv();
 
-	nest=(!nest) ? '':'document.'+nest+'.'
-	this.css=bw.dom? document.getElementById(obj).style:bw.ie4?document.all[obj].style:bw.ns4?eval(nest+"document.layers." +obj):0;
-	this.moveIt=b_moveIt;
+	nest = (!nest) ? '' : 'document.' + nest + '.'
+	this.css = bw.dom ? document.getElementById(obj).style : bw.ie4 ? document.all[obj].style : bw.ns4 ? eval(nest + "document.layers." + obj) : 0;
+	this.moveIt = b_moveIt;
 
 	cursorInit();
 
-	return this
-}
-function b_moveIt(x,y)
-{
+	return this;
+};
 
-
-	this.x=x;
-	this.y=y;
-	this.css.left=this.x+"px";
-	this.css.top=this.y+"px";
-}
+function b_moveIt(x,y) {
+	this.x = x;
+	this.y = y;
+	this.css.left = this.x + "px";
+	this.css.top = this.y + "px";
+};
 
 
 
@@ -205,19 +198,18 @@ function b_moveIt(x,y)
 function isIE () {
 	var myNav = navigator.userAgent.toLowerCase();
 	return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
-}
+};
 
 
 
-if(isIE() <9 && isIE()!= false)
-{
+// if(isIE() <9 && isIE()!= false) {
 
-	if(typeof String.prototype.trim !== 'function') {
-		String.prototype.trim = function() {
+	if (typeof String.prototype.trim !== 'function') {
+		String.prototype.trim = function () {
 			return this.replace(/^\s+|\s+$/g, '');
 		}
 	}
-}
+// }
 
 var jsGraphAnnotate=new Array();
 
