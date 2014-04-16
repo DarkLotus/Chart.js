@@ -102,6 +102,48 @@ Distributed by Hypergurl
 
 var cachebis = {};
 
+function fmtChartJSPerso(config,value,fmt){
+  switch(fmt){
+	case "SampleJS_Format":
+	  if(typeof(value)=="number")return_value="My Format : " + value.toString()+ " $";
+	  else return_value=value + "XX";
+	  break;
+	case "Change_Month":
+	  if(typeof(value)=="string")return_value=value.toString()+ " 2014";
+	  else return_value=value.toString()+"YY";
+	  break;
+
+	default:
+	  return_value=value;
+	  break;
+	}
+  return(return_value);
+};
+
+function fmtChartJS(config,value,fmt){
+
+//alert(fmt);
+  if(fmt=="notformatted")
+  {
+	return_value=value;
+  }
+  else if(fmt=="none" && typeof(value)=="number")
+  {
+
+	if(config.decimalSeparator!=".")
+	{
+	  return_value=value.toString().replace(/\./g,config.decimalSeparator);
+	}
+	else return_value=value;
+  }
+  else
+  {
+	return_value=fmtChartJSPerso(config,value,fmt);
+  }
+  return(return_value);
+};
+
+
 function tmplbis(str, data) {
 	// Figure out if we're getting a template, or if we need to
 	// load the template - and be sure to cache the result.
