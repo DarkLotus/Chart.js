@@ -39,24 +39,55 @@
  *     Footnote
  *     crossText
  *     graphMin / graphMax
+ *     logarithmic y-axis (for line and bar)
+ *     rotateLabels
  *
  */
+
+
+     var charJSPersonnalDefaultOptions = { }
+
+     var charJSPersonnalDefaultOptionsLine = { }
+     var charJSPersonnalDefaultOptionsRadar = { }
+     var charJSPersonnalDefaultOptionsPolarArea = { }
+     var charJSPersonnalDefaultOptionsPie = { }
+     var charJSPersonnalDefaultOptionsDoughnut = { }
+     var charJSPersonnalDefaultOptionsBar = { }
+     var charJSPersonnalDefaultOptionsStackedBar = { }
+     var charJSPersonnalDefaultOptionsHorizontalBar = { }
+     var charJSPersonnalDefaultOptionsHorizontalStackedBar = { }
+
 
 
 ///////// FUNCTIONS THAN CAN BE USED IN THE TEMPLATES ///////////////////////////////////////////
 
 
+
 function numberWithCommas(x) {
-		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 
-function roundTo(num,place) {
-		return +(Math.round(num + "e+"+place)  + "e-"+place);
-}
+    if(typeof(x)=="number")return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    else return(x);
+};
 
-function roundToWithThousands(num,place) {
-		return numberWithCommas(roundTo(num,place));
-}
+function roundTo(num, place) {
+    if(typeof(num)=="number")return +(Math.round(num + "e+" + place) + "e-" + place);
+    else return(num);
+} ;
+
+function roundToWithThousands(config, num, place) {
+
+    if(config.decimalSeparator!="." && typeof(num)=="string")
+    {
+      vl=numberWithCommas(roundTo(1*num.replace(config.decimalSeparator,"."),place));
+      return vl.toString().replace(/\./g,config.decimalSeparator);
+    }
+    else
+    {
+      return numberWithCommas(roundTo(num, place));
+    }
+};
+
+
 
 
 ///////// ANNOTATE PART OF THE SCRIPT ///////////////////////////////////////////
