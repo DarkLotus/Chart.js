@@ -200,7 +200,7 @@ function getMousePos(canvas, evt) {
 
 function doMouseMove(ctx,config,event){
 
-		 span='<span style="font-family:'+config.annotateFontFamily+';font-size:'+config.annotateFontSize+';font-style:'+config.annotateFontStyle+';color:'+config.annotateFontColor+'">';
+		 span='<span style="font-family:'+config.annotateFontFamily+';font-size:'+config.annotateFontSize+'px;font-style:'+config.annotateFontStyle+';color:'+config.annotateFontColor+'">';
 
 		 document.getElementById('divCursor').innerHTML="";
 		 document.getElementById('divCursor').style.border="";
@@ -551,7 +551,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == ''? '' : v1+':')+ roundToWithThousands(v2,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -650,7 +650,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2)%>" ,
@@ -722,7 +722,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == ''? '' : v1+':')+ roundToWithThousands(v2,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -796,7 +796,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == ''? '' : v1+':')+ roundToWithThousands(v2,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -911,7 +911,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2)%>" ,
@@ -1022,7 +1022,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -1131,7 +1131,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -1238,7 +1238,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
@@ -1345,7 +1345,7 @@ window.Chart = function(context){
 			annotateFontFamily : "'Arial'",
 			annotateBorder : "thin solid black",
 			annotateBackgroundColor : "#66FFCC",
-			annotateFontSize : 4,
+			annotateFontSize : 12,
 			annotateFontStyle : "normal",
 			annotateFontColor : "#666",
 			annotateLabel : "<%=(v1 == '' ? '' : v1) + (v1!='' && v2 !='' ? '/' : '')+(v2 == '' ? '' : v2)+(v1!='' || v2 !='' ? ':' : '') + roundToWithThousands(v3,2) + ' (' + roundToWithThousands(v6,1) + ' %)'%>" ,
