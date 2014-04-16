@@ -211,146 +211,147 @@ function isIE () {
 	}
 // }
 
-var jsGraphAnnotate=new Array();
+var jsGraphAnnotate = new Array();
 
 function getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
 	return {
-		 x: evt.clientX - rect.left,
-		 y: evt.clientY - rect.top
+		x: evt.clientX - rect.left,
+		y: evt.clientY - rect.top
 	};
-}
+};
 
-function doMouseMove(ctx,config,event){
+function doMouseMove(ctx, config, event) {
 
-		 span='<span style="font-family:'+config.annotateFontFamily+';font-size:'+config.annotateFontSize+'px;font-style:'+config.annotateFontStyle+';color:'+config.annotateFontColor+'">';
+	font = "<font face=" + config.annotateFontFamily + " size=" + config.annotateFontSize + "px style=\"font-style:" + config.annotateFontStyle + ";color:" + config.annotateFontColor + "\">";
 
-		 document.getElementById('divCursor').innerHTML="";
-		 document.getElementById('divCursor').style.border="";
-		 document.getElementById('divCursor').style.backgroundColor ="";
+	var annotateDIV = document.getElementById('divCursor');
 
-		 canvas_pos=getMousePos(ctx.canvas,event);
-		 for(i=0;i<jsGraphAnnotate[ctx.canvas.id]["length"];i++)
-		 {
-				if(jsGraphAnnotate[ctx.canvas.id][i][0]=="ARC") // Arc
-				{
-						distance=Math.sqrt((canvas_pos.x-jsGraphAnnotate[ctx.canvas.id][i][1])*(canvas_pos.x-jsGraphAnnotate[ctx.canvas.id][i][1])+(canvas_pos.y-jsGraphAnnotate[ctx.canvas.id][i][2])*(canvas_pos.y-jsGraphAnnotate[ctx.canvas.id][i][2]));
-						if(distance > jsGraphAnnotate[ctx.canvas.id][i][3] && distance < jsGraphAnnotate[ctx.canvas.id][i][4]  )
-						{
+	annotateDIV.innerHTML = "";
+	annotateDIV.style.border = "";
+	annotateDIV.style.backgroundColor = "";
 
-							angle=Math.acos((canvas_pos.x-jsGraphAnnotate[ctx.canvas.id][i][1])/distance);
-							if(canvas_pos.y<jsGraphAnnotate[ctx.canvas.id][i][2])angle=-angle;
-							if(angle < -Math.PI/2)angle=angle+2*Math.PI;
-							if(angle > jsGraphAnnotate[ctx.canvas.id][i][5] && angle < jsGraphAnnotate[ctx.canvas.id][i][6])
-							{
-								document.getElementById('divCursor').style.border=config.annotateBorder;
-								document.getElementById('divCursor').style.backgroundColor =config.annotateBackgroundColor;
+	canvas_pos = getMousePos(ctx.canvas, event);
+	for (i = 0; i < jsGraphAnnotate[ctx.canvas.id]["length"]; i++) {
 
-								v1=jsGraphAnnotate[ctx.canvas.id][i][7];       // V1=Label
-								v2=jsGraphAnnotate[ctx.canvas.id][i][8];       // V2=Data Value
-								v3=jsGraphAnnotate[ctx.canvas.id][i][9];       // V3=Cumulated Value
-								v4=jsGraphAnnotate[ctx.canvas.id][i][10];      // V4=Total Data Value
-								v5=jsGraphAnnotate[ctx.canvas.id][i][11];      // V5=Angle
-								v6=100*v2/v4;                                  // v6=Percentage;
-								v7=jsGraphAnnotate[ctx.canvas.id][i][1];       // v7=midPointX of arc;
-								v8=jsGraphAnnotate[ctx.canvas.id][i][2];       // v8=midPointY of arc;
-								v9=jsGraphAnnotate[ctx.canvas.id][i][3];       // v9=radius Minimum;
-								v10=jsGraphAnnotate[ctx.canvas.id][i][4];      // v10=radius Maximum;
-								v11=jsGraphAnnotate[ctx.canvas.id][i][5];      // v11=start angle;
-								v12=jsGraphAnnotate[ctx.canvas.id][i][6];      // v12=stop angle;
-								v13=jsGraphAnnotate[ctx.canvas.id][i][7];      // v13=position in Data;
+		if (jsGraphAnnotate[ctx.canvas.id][i][0] == "ARC") {
+			distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
+			if (distance > jsGraphAnnotate[ctx.canvas.id][i][3] && distance < jsGraphAnnotate[ctx.canvas.id][i][4]) {
 
-								graphPosX=canvas_pos.x;
-								graphPosY=canvas_pos.y;
+				angle = Math.acos((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) / distance);
+				if (canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2]) angle = -angle;
 
-								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, v13:v13, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
+				while (angle < 0){angle+=2*Math.PI;}
+				while (angle > 2*Math.PI){angle-=2*Math.PI;}
+				if(angle<config.startAngle*(Math.PI/360))angle+=2*Math.PI;
 
-								x=bw.ns4 || bw.ns5?event.pageX:event.x ;
-								y=bw.ns4 || bw.ns5?event.pageY:event.y ;
-								if(bw.ie4 || bw.ie5) y=y+eval(scrolled);
-								oCursor.moveIt(x+fromLeft,y+fromTop) ;
+				if ((angle > jsGraphAnnotate[ctx.canvas.id][i][5] && angle < jsGraphAnnotate[ctx.canvas.id][i][6]) || (angle > jsGraphAnnotate[ctx.canvas.id][i][5]-2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]-2*Math.PI)|| (angle > jsGraphAnnotate[ctx.canvas.id][i][5]+2*Math.PI && angle < jsGraphAnnotate[ctx.canvas.id][i][6]+2*Math.PI)) {
 
+					annotateDIV.style.border = config.annotateBorder;
+					annotateDIV.style.padding = config.annotatePadding;
+					annotateDIV.style.borderRadius = config.annotateBorderRadius;
+					annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
 
-							}
-						}
-				} else if(jsGraphAnnotate[ctx.canvas.id][i][0]=="RECT") {
-						if(canvas_pos.x > jsGraphAnnotate[ctx.canvas.id][i][1] && canvas_pos.x < jsGraphAnnotate[ctx.canvas.id][i][3] && canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2] && canvas_pos.y > jsGraphAnnotate[ctx.canvas.id][i][4])
-						{
-								document.getElementById('divCursor').style.border=config.annotateBorder;
-								document.getElementById('divCursor').style.backgroundColor =config.annotateBackgroundColor;
+					v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV1);       // V1=Label
+					v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV2);       // V2=Data Value
+					v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV3);       // V3=Cumulated Value
+					v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV4);      // V4=Total Data Value
+					v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV5);      // V5=Angle
+					v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][8] / jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV6);                                  // v6=Percentage;
+					v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=midPointX of arc;
+					v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=midPointY of arc;
+					v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=radius Minimum;
+					v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=radius Maximum;
+					v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV11);      // v11=start angle;
+					v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV12);      // v12=stop angle;
+					v13 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][12],config.fmtV13);      // v13=position in Data;
 
-								v1=jsGraphAnnotate[ctx.canvas.id][i][5];       // V1=Label1
-								v2=jsGraphAnnotate[ctx.canvas.id][i][6];       // V2=Label2
-								v3=jsGraphAnnotate[ctx.canvas.id][i][7];       // V3=Data Value
-								v4=jsGraphAnnotate[ctx.canvas.id][i][8];       // V4=Cumulated Value
-								v5=jsGraphAnnotate[ctx.canvas.id][i][9] ;      // V5=Total Data Value
-								v6=100*v3/v5;                                  // v6=Percentage;
-								v7=jsGraphAnnotate[ctx.canvas.id][i][1];       // v7=top X of rectangle;
-								v8=jsGraphAnnotate[ctx.canvas.id][i][2];       // v8=top Y of rectangle;
-								v9=jsGraphAnnotate[ctx.canvas.id][i][3];       // v9=bottom X of rectangle;
-								v10=jsGraphAnnotate[ctx.canvas.id][i][4];      // v10=bottom Y of rectangle;
-								v11=jsGraphAnnotate[ctx.canvas.id][i][10];      // v11=position in Dataset;
-								v12=jsGraphAnnotate[ctx.canvas.id][i][11];      // v12=position in Dataset[v11].Data;
+					graphPosX = canvas_pos.x;
+					graphPosY = canvas_pos.y;
 
-								graphPosX=canvas_pos.x;
-								graphPosY=canvas_pos.y;
-
-								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
+					// create label text
+					dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, v13: v13, graphPosX: graphPosX, graphPosY: graphPosY });
+					annotateDIV.innerHTML = font + dispString + "</font>";
 
 
-
-								x=bw.ns4 || bw.ns5?event.pageX:event.x ;
-								y=bw.ns4 || bw.ns5?event.pageY:event.y ;
-								if(bw.ie4 || bw.ie5) y=y+eval(scrolled);
-								oCursor.moveIt(x+fromLeft,y+fromTop) ;
-
-
-						}
-
-				} else if(jsGraphAnnotate[ctx.canvas.id][i][0]=="POINT") {
-						distance=Math.sqrt((canvas_pos.x-jsGraphAnnotate[ctx.canvas.id][i][1])*(canvas_pos.x-jsGraphAnnotate[ctx.canvas.id][i][1])+(canvas_pos.y-jsGraphAnnotate[ctx.canvas.id][i][2])*(canvas_pos.y-jsGraphAnnotate[ctx.canvas.id][i][2]));
-						if(distance < 10)
-						{
-								document.getElementById('divCursor').style.border=config.annotateBorder;
-								document.getElementById('divCursor').style.backgroundColor =config.annotateBackgroundColor;
-
-								v1=jsGraphAnnotate[ctx.canvas.id][i][3];       // V1=Label1
-								v2=jsGraphAnnotate[ctx.canvas.id][i][4];       // V2=Label2
-								v3=jsGraphAnnotate[ctx.canvas.id][i][5];       // V3=Data Value
-								v4=jsGraphAnnotate[ctx.canvas.id][i][6];       // V4=Difference with Previous line
-								v5=jsGraphAnnotate[ctx.canvas.id][i][7] ;      // V5=Difference with next line;
-								v6=jsGraphAnnotate[ctx.canvas.id][i][8] ;      // V6=max;
-								v7=jsGraphAnnotate[ctx.canvas.id][i][9] ;      // V7=Total;
-								v8=100*v3/v7;                                  // v8=percentage;
-								v9=jsGraphAnnotate[ctx.canvas.id][i][1];       // v9=pos X of point;
-								v10=jsGraphAnnotate[ctx.canvas.id][i][2];       // v10=pos Y of point;
-								v11=jsGraphAnnotate[ctx.canvas.id][i][10];      // v11=position in Dataset;
-								v12=jsGraphAnnotate[ctx.canvas.id][i][11];      // v12=position in Dataset[v11].Data;
-								v13=jsGraphAnnotate[ctx.canvas.id][i][12];      // v13=Tooltip label
-
-
-
-								graphPosX=canvas_pos.x;
-								graphPosY=canvas_pos.y;
-
-
-								dispString=tmplbis(config.annotateLabel,{v1:v1 ,v2:v2, v3:v3,v4:v4, v5:v5, v6:v6, v7:v7, v8:v8, v9:v9, v10:v10, v11:v11, v12:v12, graphPosX:graphPosX, graphPosY:graphPosY});
-								document.getElementById('divCursor').innerHTML=span+dispString+"</span>";
-
-
-								x=bw.ns4 || bw.ns5?event.pageX:event.x ;
-								y=bw.ns4 || bw.ns5?event.pageY:event.y ;
-								if(bw.ie4 || bw.ie5) y=y+eval(scrolled);
-								oCursor.moveIt(x+fromLeft,y+fromTop) ;
-
-						}
-
+					x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+					y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+					if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+					oCursor.moveIt(x + fromLeft, y + fromTop);
 				}
-		 }
+			}
+		} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "RECT") {
+			if (canvas_pos.x > jsGraphAnnotate[ctx.canvas.id][i][1] && canvas_pos.x < jsGraphAnnotate[ctx.canvas.id][i][3] && canvas_pos.y < jsGraphAnnotate[ctx.canvas.id][i][2] && canvas_pos.y > jsGraphAnnotate[ctx.canvas.id][i][4]) {
 
+				annotateDIV.style.border = config.annotateBorder;
+				annotateDIV.style.padding = config.annotatePadding;
+				annotateDIV.style.borderRadius = config.annotateBorderRadius;
+				annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
+
+				v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV1);       // V1=Label1
+				v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV2);       // V2=Label2
+				v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV3);       // V3=Data Value
+				v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV4);       // V4=Cumulated Value
+				v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV5);      // V5=Total Data Value
+				v6 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][7] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV6);                                  // v6=Percentage;
+				v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV7);       // v7=top X of rectangle;
+				v8 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV8);       // v8=top Y of rectangle;
+				v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV9);       // v9=bottom X of rectangle;
+				v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV10);      // v10=bottom Y of rectangle;
+				v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
+				v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
+
+				graphPosX = canvas_pos.x;
+				graphPosY = canvas_pos.y;
+
+				dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
+				annotateDIV.innerHTML = font + dispString + "</font>";
+
+				x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+				y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+				if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+				oCursor.moveIt(x + fromLeft, y + fromTop);
+			}
+
+		} else if (jsGraphAnnotate[ctx.canvas.id][i][0] == "POINT") {
+			distance = Math.sqrt((canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) * (canvas_pos.x - jsGraphAnnotate[ctx.canvas.id][i][1]) + (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]) * (canvas_pos.y - jsGraphAnnotate[ctx.canvas.id][i][2]));
+			if (distance < 10) {
+
+				annotateDIV.style.border = config.annotateBorder;
+				annotateDIV.style.padding = config.annotatePadding;
+				annotateDIV.style.borderRadius = config.annotateBorderRadius;
+				annotateDIV.style.backgroundColor = config.annotateBackgroundColor;
+
+				v1 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][3],config.fmtV1);       // V1=Label1
+				v2 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][4],config.fmtV2);       // V2=Label2
+				v3 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][5],config.fmtV3);       // V3=Data Value
+				v4 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][6],config.fmtV4);       // V4=Difference with Previous line
+				v5 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][7],config.fmtV5);      // V5=Difference with next line;
+				v6 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][8],config.fmtV6);      // V6=max;
+				v7 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV7);      // V7=Total;
+				v8 = fmtChartJS(config,100 * jsGraphAnnotate[ctx.canvas.id][i][5] / jsGraphAnnotate[ctx.canvas.id][i][9],config.fmtV8);                                  // v8=percentage;
+				v9 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][1],config.fmtV9);       // v9=pos X of point;
+				v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV10);       // v10=pos Y of point;
+				v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
+				v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
+
+				graphPosX = canvas_pos.x;
+				graphPosY = canvas_pos.y;
+
+				dispString = tmplbis(config.annotateLabel, { config:config, v1: v1, v2: v2, v3: v3, v4: v4, v5: v5, v6: v6, v7: v7, v8: v8, v9: v9, v10: v10, v11: v11, v12: v12, graphPosX: graphPosX, graphPosY: graphPosY });
+				annotateDIV.innerHTML = font + dispString + "</font>";
+
+				x = bw.ns4 || bw.ns5 ? event.pageX : event.x;
+				y = bw.ns4 || bw.ns5 ? event.pageY : event.y;
+				if (bw.ie4 || bw.ie5) y = y + eval(scrolled);
+				oCursor.moveIt(x + fromLeft, y + fromTop);
+
+			}
+
+		}
 	}
+
+};
 
 
 
@@ -359,7 +360,7 @@ function doMouseMove(ctx,config,event){
 
 
 //Define the global Chart Variable as a class.
-window.Chart = function(context){
+window.Chart = function (context) {
 
 	var chart = this;
 
