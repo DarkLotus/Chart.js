@@ -3619,907 +3619,909 @@ window.Chart = function (context) {
 	} ;
 
 
-	function calculateOffset(val,calculatedScale,scaleHop){
-		var outerValue = calculatedScale.steps * calculatedScale.stepValue;
-		var adjustedValue = val - calculatedScale.graphMin;
-		var scalingFactor = CapValue(adjustedValue/outerValue,1,0);
-		return (scaleHop*calculatedScale.steps) * scalingFactor;
-	}
+	function calculateOffset(config, val, calculatedScale, scaleHop) {
+		if (!config.logarithmic) { // no logarithmic scale
+			var outerValue = calculatedScale.steps * calculatedScale.stepValue;
+			var adjustedValue = val - calculatedScale.graphMin;
+			var scalingFactor = CapValue(adjustedValue / outerValue, 1, 0);
+			return (scaleHop * calculatedScale.steps) * scalingFactor;
+		} else { // logarithmic scale
+			return CapValue(log10(val) * scaleHop - calculateOrderOfMagnitude(calculatedScale.graphMin) * scaleHop, undefined, 0);
+		}
+	} ;
 
-	function animationLoop(config,drawScale,drawData,ctx,clrx,clry,clrwidth,clrheight,midPosX,midPosY,borderX,borderY,data){
+	function animationLoop(config, drawScale, drawData, ctx, clrx, clry, clrwidth, clrheight, midPosX, midPosY, borderX, borderY, data) {
 
-		if(isIE() <9 && isIE()!= false)config.animation=false;
+		var cntiter=0;
 
-		var animFrameAmount = (config.animation)? 1/CapValue(config.animationSteps,Number.MAX_VALUE,1) : 1,
-			easingFunction = animationOptions[config.animationEasing],
-			percentAnimComplete =(config.animation)? 0 : 1;
+		if (isIE() < 9 && isIE() != false) config.animation = false;
+
+		var animFrameAmount = (config.animation) ? 1 / CapValue(config.animationSteps, Number.MAX_VALUE, 1) : 1,
+		easingFunction = animationOptions[config.animationEasing],
+		percentAnimComplete = (config.animation) ? 0 : 1;
+
+		if (typeof drawScale !== "function") drawScale = function () { };
+
+		if(config.clearRect)requestAnimFrame(animLoop);
+		else animLoop();
 
 
+		function animateFrame() {
+			var easeAdjustedAnimationPercent = (config.animation) ? CapValue(easingFunction(percentAnimComplete), null, 0) : 1;
+			if(1*cntiter>=1*CapValue(config.animationSteps, Number.MAX_VALUE, 1) || config.animation==false)easeAdjustedAnimationPercent=1;
+			else if(easeAdjustedAnimationPercent>=1)easeAdjustedAnimationPercent=0.9999;
 
-		if (typeof drawScale !== "function") drawScale = function(){};
+			if (!(isIE() < 9 && isIE() != false) && config.clearRect) ctx.clearRect(clrx, clry, clrwidth, clrheight);
 
-		requestAnimFrame(animLoop);
+			dispCrossText(ctx, config, midPosX, midPosY, borderX, borderY, false, data, easeAdjustedAnimationPercent);
 
-		function animateFrame(){
-			var easeAdjustedAnimationPercent =(config.animation)? CapValue(easingFunction(percentAnimComplete),null,0) : 1;
-
-			if(!(isIE() <9 && isIE()!= false))ctx.clearRect(clrx,clry,clrwidth,clrheight);
-
-			dispCrossText(ctx,config,midPosX,midPosY,borderX,borderY,false,data,easeAdjustedAnimationPercent);
-
-			if(config.scaleOverlay){
+			if (config.scaleOverlay) {
 				drawData(easeAdjustedAnimationPercent);
 				drawScale();
 			} else {
 				drawScale();
 				drawData(easeAdjustedAnimationPercent);
 			}
-			dispCrossText(ctx,config,midPosX,midPosY,borderX,borderY,true,data,easeAdjustedAnimationPercent);
-		}
-		function animLoop(){
+			dispCrossText(ctx, config, midPosX, midPosY, borderX, borderY, true, data, easeAdjustedAnimationPercent);
+		};
+		function animLoop() {
 			//We need to check if the animation is incomplete (less than 1), or complete (1).
-				percentAnimComplete += animFrameAmount;
-				animateFrame();
-				//Stop the loop continuing forever
-				if (percentAnimComplete <= 1){
-					requestAnimFrame(animLoop);
-				}
-				else{
-					if (typeof config.onAnimationComplete == "function") config.onAnimationComplete();
-				}
-
-		}
-
-	}
+			cntiter++;
+			percentAnimComplete += animFrameAmount;
+			if(cntiter==config.animationSteps || config.animation==false )percentAnimComplete=1;
+			animateFrame();
+			//Stop the loop continuing forever
+			if (percentAnimComplete < 1) {
+				requestAnimFrame(animLoop);
+			}
+			else {
+				if (typeof config.onAnimationComplete == "function") config.onAnimationComplete();
+			}
+		} ;
+	} ;
 
 	//Declare global functions to be called within this namespace here.
 
-
 	// shim layer with setTimeout fallback
-	var requestAnimFrame = (function(){
+	var requestAnimFrame = (function () {
 		return window.requestAnimationFrame ||
-			window.webkitRequestAnimationFrame ||
-			window.mozRequestAnimationFrame ||
-			window.oRequestAnimationFrame ||
-			window.msRequestAnimationFrame ||
-			function(callback) {
-				window.setTimeout(callback, 1000 / 60);
-			};
+	  window.webkitRequestAnimationFrame ||
+	  window.mozRequestAnimationFrame ||
+	  window.oRequestAnimationFrame ||
+	  window.msRequestAnimationFrame ||
+	  function (callback) {
+		  window.setTimeout(callback, 1000/60 );
+	  };
 	})();
 
-	function calculateScale(maxSteps,minSteps,maxValue,minValue,labelTemplateString){
+	function calculateScale(config, maxSteps, minSteps, maxValue, minValue, labelTemplateString) {
+		var graphMin, graphMax, graphRange, stepValue, numberOfSteps, valueRange, rangeOrderOfMagnitude, decimalNum;
 
-			var graphMin,graphMax,graphRange,stepValue,numberOfSteps,valueRange,rangeOrderOfMagnitude,decimalNum;
-
+		if (!config.logarithmic) { // no logarithmic scale
 			valueRange = maxValue - minValue;
-
 			rangeOrderOfMagnitude = calculateOrderOfMagnitude(valueRange);
-
-					graphMin = Math.floor(minValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
-
-						graphMax = Math.ceil(maxValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
-
-						graphRange = graphMax - graphMin;
-
-						stepValue = Math.pow(10, rangeOrderOfMagnitude);
-
-					numberOfSteps = Math.round(graphRange / stepValue);
-
-					//Compare number of steps to the max and min for that size graph, and add in half steps if need be.
-					while(numberOfSteps < minSteps || numberOfSteps > maxSteps) {
-						if (numberOfSteps < minSteps){
-							stepValue /= 2;
-							numberOfSteps = Math.round(graphRange/stepValue);
-						}
-						else{
-							stepValue *=2;
-							numberOfSteps = Math.round(graphRange/stepValue);
-						}
-					};
-
-					var labels = [];
-					populateLabels(labelTemplateString, labels, numberOfSteps, graphMin, stepValue);
-
-					return {
-						steps : numberOfSteps,
-				stepValue : stepValue,
-				graphMin : graphMin,
-				labels : labels
-
-					}
-
-			function calculateOrderOfMagnitude(val){
-				return Math.floor(Math.log(val) / Math.LN10);
-			}
-
-
-	}
-
-		//Populate an array of all the labels by interpolating the string.
-		function populateLabels(labelTemplateString, labels, numberOfSteps, graphMin, stepValue) {
-				if (labelTemplateString) {
-						//Fix floating point errors by setting to fixed the on the same decimal as the stepValue.
-						for (var i = 1; i < numberOfSteps + 1; i++) {
-								labels.push(tmpl(labelTemplateString, {value: (1*(graphMin + (stepValue * i)).toFixed(getDecimalPlaces(stepValue)))}));
-						}
-				}
+			graphMin = Math.floor(minValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
+			graphMax = Math.ceil(maxValue / (1 * Math.pow(10, rangeOrderOfMagnitude))) * Math.pow(10, rangeOrderOfMagnitude);
+		}
+		else { // logarithmic scale
+			graphMin = Math.pow(10, calculateOrderOfMagnitude(minValue));
+			graphMax = Math.pow(10, calculateOrderOfMagnitude(maxValue) + 1);
+			rangeOrderOfMagnitude = calculateOrderOfMagnitude(graphMax) - calculateOrderOfMagnitude(graphMin);
 		}
 
+		graphRange = graphMax - graphMin;
+		stepValue = Math.pow(10, rangeOrderOfMagnitude);
+		numberOfSteps = Math.round(graphRange / stepValue);
+
+		if (!config.logarithmic) { // no logarithmic scale
+			//Compare number of steps to the max and min for that size graph, and add in half steps if need be.
+			while (numberOfSteps < minSteps || numberOfSteps > maxSteps) {
+				if (numberOfSteps < minSteps) {
+					stepValue /= 2;
+					numberOfSteps = Math.round(graphRange / stepValue);
+				}
+				else {
+					stepValue *= 2;
+					numberOfSteps = Math.round(graphRange / stepValue);
+				}
+			}
+		} else { // logarithmic scale
+			numberOfSteps = rangeOrderOfMagnitude; // so scale is  10,100,1000,...
+		}
+
+		var labels = [];
+
+		populateLabels(config, labelTemplateString, labels, numberOfSteps, graphMin, graphMax, stepValue);
+
+		return {
+			steps: numberOfSteps,
+			stepValue: stepValue,
+			graphMin: graphMin,
+			labels: labels,
+			maxValue: maxValue
+		}
+	} ;
+
+	function calculateOrderOfMagnitude(val) {
+		return Math.floor(Math.log(val) / Math.LN10);
+	} ;
+
+	//Populate an array of all the labels by interpolating the string.
+	function populateLabels(config, labelTemplateString, labels, numberOfSteps, graphMin, graphMax, stepValue) {
+		if (labelTemplateString) {
+			//Fix floating point errors by setting to fixed the on the same decimal as the stepValue.
+			if (!config.logarithmic) { // no logarithmic scale
+				for (var i = 0; i < numberOfSteps + 1; i++) {
+					labels.push(tmpl(labelTemplateString, { value: fmtChartJS(config,1*((graphMin + (stepValue * i)).toFixed(getDecimalPlaces(stepValue))),config.fmtYLabel) }));
+				}
+			} else { // logarithmic scale 10,100,1000,...
+				var value = graphMin;
+				while (value < graphMax) {
+					labels.push(tmpl(labelTemplateString, { value: fmtChartJS(config,1*value.toFixed(getDecimalPlaces(stepValue)),config.fmtYLabel) }));
+					value *= 10;
+				}
+			}
+		}
+	} ;
+
 	//Max value from array
-	function Max( array ){
-		return Math.max.apply( Math, array );
+	function Max(array) {
+		return Math.max.apply(Math, array);
 	};
+
 	//Min value from array
-	function Min( array ){
-		return Math.min.apply( Math, array );
+	function Min(array) {
+		return Math.min.apply(Math, array);
 	};
 	//Default if undefined
-	function Default(userDeclared,valueIfFalse){
-		if(!userDeclared){
+
+	function Default(userDeclared, valueIfFalse) {
+		if (!userDeclared) {
 			return valueIfFalse;
 		} else {
 			return userDeclared;
 		}
 	};
+
 	//Is a number function
 	function isNumber(n) {
 		return !isNaN(parseFloat(n)) && isFinite(n);
-	}
+	} ;
+
 	//Apply cap a value at a high or low number
-	function CapValue(valueToCap, maxValue, minValue){
-		if(isNumber(maxValue)) {
-			if( valueToCap > maxValue ) {
+	function CapValue(valueToCap, maxValue, minValue) {
+		if (isNumber(maxValue)) {
+			if (valueToCap > maxValue) {
 				return maxValue;
 			}
 		}
-		if(isNumber(minValue)){
-			if ( valueToCap < minValue ){
+		if (isNumber(minValue)) {
+			if (valueToCap < minValue) {
 				return minValue;
 			}
 		}
 		return valueToCap;
-	}
-	function getDecimalPlaces (num){
+	};
+
+	function getDecimalPlaces(num) {
 		var numberOfDecimalPlaces;
-		if (num%1!=0){
+		if (num % 1 != 0) {
 			return num.toString().split(".")[1].length
 		}
-		else{
+		else {
 			return 0;
 		}
 
-	}
+	};
 
-	function mergeChartConfig(defaults,userDefined){
+	function mergeChartConfig(defaults, userDefined) {
 		var returnObj = {};
-			for (var attrname in defaults) { returnObj[attrname] = defaults[attrname]; }
-			for (var attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
-			return returnObj;
-	}
+		for (var attrname in defaults) { returnObj[attrname] = defaults[attrname]; }
+		for (var attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
+		return returnObj;
+	};
 
 	//Javascript micro templating by John Resig - source at http://ejohn.org/blog/javascript-micro-templating/
-		var cache = {};
-
-		function tmpl(str, data){
-			// Figure out if we're getting a template, or if we need to
-			// load the template - and be sure to cache the result.
-			var fn = !/\W/.test(str) ?
-				cache[str] = cache[str] ||
-					tmpl(document.getElementById(str).innerHTML) :
-
-				// Generate a reusable function that will serve as a template
-				// generator (and which will be cached).
-				new Function("obj",
-					"var p=[],print=function(){p.push.apply(p,arguments);};" +
-
-					// Introduce the data as local variables using with(){}
-					"with(obj){p.push('" +
-
-					// Convert the template into pure JavaScript
-					str
-						.replace(/[\r\t\n]/g, " ")
-						.split("<%").join("\t")
-						.replace(/((^|%>)[^\t]*)'/g, "$1\r")
-						.replace(/\t=(.*?)%>/g, "',$1,'")
-						.split("\t").join("');")
-						.split("%>").join("p.push('")
-						.split("\r").join("\\'")
-				+ "');}return p.join('');");
-
-			// Provide some basic currying to the user
-			return data ? fn( data ) : fn;
-		};
-
-		function dispCrossText(ctx,config,posX,posY,borderX,borderY,overlay,data,animPC)
-		{
-				var i,disptxt,txtposx,txtposy,txtAlign,txtBaseline;
-
-				for(i=0;i<config.crossText.length;i++)
-				{
-					if(config.crossText[i]!="" && config.crossTextOverlay[ Min ([i,config.crossTextOverlay.length-1 ])]==overlay)
-					{
-						ctx.save();
-						ctx.beginPath();
-						ctx.font = config.crossTextFontStyle[ Min ([i,config.crossTextFontStyle.length-1 ])] +" "+ config.crossTextFontSize[ Min ([i,config.crossTextFontSize.length-1 ])]+"px "+config.crossTextFontFamily[ Min ([i,config.crossTextFontFamily.length-1 ])];
-						ctx.fillStyle = config.crossTextFontColor[ Min ([i,config.crossTextFontColor.length-1 ])];
-
-						textAlign = config.crossTextAlign[ Min ([i,config.crossTextAlign.length-1 ])];
-						textBaseline=config.crossTextBaseline[ Min ([i,config.crossTextBaseline.length-1 ])];
-
-						txtposx= 1*config.crossTextPosX[ Min ([i,config.crossTextPosX.length-1 ])];
-						txtposy= 1*config.crossTextPosY[ Min ([i,config.crossTextPosY.length-1 ])];
-
-						switch (1*config.crossTextRelativePosX[ Min ([i,config.crossTextRelativePosX.length-1 ])])
-						{
-							case 0:
-								if (textAlign=="default")textAlign="left";
-								break;
-							case 1:
-								txtposx+=borderX;
-								if (textAlign=="default")textAlign="right";
-								break;
-							case 2:
-								txtposx+=posX;
-								if (textAlign=="default")textAlign="center";
-								break;
-							case -2:
-								txtposx+=context.canvas.width/2;
-								if (textAlign=="default")textAlign="center";
-								break;
-							case 3:
-								txtposx+=txtposx+2*posX-borderX;
-								if (textAlign=="default")textAlign="left";
-								break;
-							case 4:
-								// posX=width;
-								txtposx+=context.canvas.width;
-								if (textAlign=="default")textAlign="right";
-								break;
-							default:
-								txtposx+=posX;
-								if (textAlign=="default")textAlign="center";
-								break;
-						}
-
-						switch (1*config.crossTextRelativePosY[ Min ([i,config.crossTextRelativePosY.length-1 ])])
-						{
-							case 0:
-								if (textBaseline=="default")textBaseline="top";
-								break;
-							case 3:
-								txtposy+=borderY;
-								if (textBaseline=="default")textBaseline="top";
-								break;
-							case 2:
-								txtposy+=posY;
-								if (textBaseline=="default")textBaseline="middle";
-								break;
-							case -2:
-								txtposy+=context.canvas.height/2;
-								if (textBaseline=="default")textBaseline="middle";
-								break;
-							case 1:
-								txtposy+=txtposy+2*posY-borderY;
-								if (textBaseline=="default")textBaseline="bottom";
-								break;
-							case 4:
-								txtposy+=context.canvas.height;
-								if (textBaseline=="default")textBaseline="bottom";
-								break;
-							default:
-								txtposy+=posY;
-								if (textBaseline=="default")textBaseline="middle";
-								break;
-						}
-
-
-						ctx.textAlign=textAlign;
-						ctx.textBaseline=textBaseline;
-
-						ctx.translate(1*txtposx,1*txtposy);
-
-						ctx.rotate(config.crossTextAngle[ Min ([i,config.crossTextAngle.length-1 ])]);
-
-						if(config.crossText[i].substring(0,1)=="%")
-						{
-							if (typeof config.crossTextFunction == "function") disptxt=config.crossTextFunction(i,config.crossText[i],ctx,config,posX,posY,borderX,borderY,overlay,data,animPC);
-						}
-						else disptxt=config.crossText[i];
-
-						ctx.fillText(disptxt, 0,0);
-						ctx.stroke();
-						ctx.restore();
-					}
-				}
-
-
-		}
-
-	 //****************************************************************************************
-	 function setMeasures(data,config,ctx,height,width,ylabels,reverseLegend,reverseAxis,drawAxis,drawLegendOnData){
-
-			spaceBefore=5;
-			spaceAfter=5;
-			spaceLeft=5;
-			spaceRight=5;
-
-			borderWidth=0;
-
-			yAxisLabelWidth=0;
-			yAxisLabelPos=0;
-
-			yLabelsWidth=0;
-
-
-			graphTitleHeight=0;
-			graphTitlePosY=0;
-
-			graphSubTitleHeight=0;
-			graphSubTitlePosY=0;
-
-			footNoteHeight=0;
-			footNotePosY=0;
-
-			yAxisUnitHeight=0;
-			yAxisUnitPosY=0;
-
-			widestLegend=0;
-			nbeltLegend=0;
-			nbLegendLines=0;
-			nbLegendCols=0;
-			spaceLegendHeight=0;
-			xFirstLegendTextPos=0;
-			yFirstLegendTextPos=0;
-			xLegendBorderPos=0;
-			yLegendBorderPos=0;
-
-			yAxisLabelWidth=0;
-			yAxisLabelPos=0;
-
-			xAxisLabelHeight=0;
-			xLabelHeight=0;
-
-			widestXLabel=1;
-
-			leftNotUsableSize=0;
-			rightNotUsableSize=0;
-
-			rotateLabels=0;
-			xLabelPos=0;
-
-
-
-			// Borders
-
-			if(typeof(config.canvasBorders)!= "undefined"){
-				if(config.canvasBorders) borderWidth= config.canvasBordersWidth;
-			}
-
-			// compute widest X label
-
-
-			if(drawAxis) {
-				 ctx.font = config.scaleFontStyle + " " + config.scaleFontSize+"px " + config.scaleFontFamily;
-				 for (var i=0; i<data.labels.length; i++){
-						var textLength = ctx.measureText(data.labels[i]).width;
-						//If the text length is longer - make that equal to longest text!
-						widestXLabel = (textLength > widestXLabel)? textLength : widestXLabel;
-				 }
-			}
-
-			// compute Y Label Width
-
-			widestYLabel=1;
-
-
-			if(drawAxis) {
-
-				if(ylabels != null){
-					ctx.font = config.scaleFontStyle + " " + config.scaleFontSize+"px " + config.scaleFontFamily;
-					for (var i=ylabels.length-1;i>=0; i--){
-							if(typeof(ylabels[i])=="string"){
-								if(ylabels[i].trim() != ""){
-									var textLength = ctx.measureText(ylabels[i]).width;
-									//If the text length is longer - make that equal to longest text!
-									widestYLabel = (textLength > widestYLabel)? textLength : widestYLabel;
-								}
-							}
-					}
-
-
-
-					if(reverseAxis==false)  yLabelsWidth=widestYLabel+spaceLeft+spaceRight;
-					else yLabelsWidth=widestXLabel+spaceLeft+spaceRight;
-
-				}
-			}
-
-			// yAxisLabel
-			leftNotUsableSize=borderWidth+config.spaceLeft
-			rightNotUsableSize=borderWidth+config.spaceRight;
-
-
-			if(drawAxis) {
-
-				if(typeof(config.yAxisLabel)!= "undefined"){
-					if(config.yAxisLabel.trim() != "")
-					{
-						yAxisLabelWidth= (config.yAxisFontSize+spaceBefore+spaceAfter);
-						yAxisLabelPosLeft= borderWidth+config.spaceLeft+spaceBefore+config.yAxisFontSize;
-						yAxisLabelPosRight= width-config.spaceRight-borderWidth-spaceAfter-config.yAxisFontSize;
-					}
-				}
-
-				if(config.yAxisLeft){
-					if(reverseAxis==false)leftNotUsableSize=borderWidth+config.spaceLeft+yAxisLabelWidth+widestYLabel+spaceBefore+spaceAfter;
-					else                  leftNotUsableSize=borderWidth+config.spaceLeft+yAxisLabelWidth+widestXLabel+spaceBefore+spaceAfter;
-				}
-
-
-				if(config.yAxisRight){
-					if(reverseAxis==false)rightNotUsableSize=borderWidth+config.spaceRight+yAxisLabelWidth+widestYLabel+spaceBefore+spaceAfter;
-					else                  rightNotUsableSize=borderWidth+config.spaceRight+yAxisLabelWidth+widestXLabel+spaceBefore+spaceAfter;
-				}
-
-			}
-
-
-			availableWidth=width-leftNotUsableSize-rightNotUsableSize;
-
-			// Title
-
-			if(typeof(config.graphTitle)!= "undefined"){
-				if(config.graphTitle.trim() != ""){
-						graphTitleHeight = (config.graphTitleFontSize+spaceBefore+spaceAfter);
-						graphTitlePosY=borderWidth+config.spaceTop+graphTitleHeight-spaceAfter;
-				}
-			}
-
-			// subTitle
-
-			if(config.graphSubTitle.trim() != ""){
-					graphSubTitleHeight = (config.graphSubTitleFontSize+spaceBefore+spaceAfter);
-					graphSubTitlePosY=borderWidth+config.spaceTop+graphTitleHeight+graphSubTitleHeight-spaceAfter;
-			}
-
-			// yAxisUnit
-
-			if(drawAxis) {
-
-				if(typeof(config.yAxisUnit)!= "undefined"){
-					if(config.yAxisUnit.trim() != ""){
-						yAxisUnitHeight = (config.yAxisUnitFontSize+spaceBefore+spaceAfter);
-						yAxisUnitPosY=borderWidth+config.spaceTop+graphTitleHeight+graphSubTitleHeight+yAxisUnitHeight-spaceAfter;
-					}
-				}
-			}
-
-
-			topNotUsableSize=borderWidth+config.spaceTop+graphTitleHeight+graphSubTitleHeight+yAxisUnitHeight+spaceAfter;
-
-			// footNote
-
-			if(typeof(config.footNote)!= "undefined"){
-				if(config.footNote.trim() != "")
-				{
-					footNoteHeight= (config.footNoteFontSize+spaceBefore+spaceAfter);
-					footNotePosY= height - config.spaceBottom - borderWidth-spaceAfter;
-				}
-			}
-
-			// remove space for Legend
-			if(typeof(config.legend)!= "undefined"){
-				if(config.legend==true){
-					ctx.font = config.legendFontStyle + " " + config.legendFontSize+"px " + config.legendFontFamily;
-					if(drawLegendOnData)
-					{
-						for (var i=data.datasets.length-1;i>=0; i--){
-							if(typeof(data.datasets[i].title)=="string"){
-
-								if(data.datasets[i].title.trim() != ""){
-									nbeltLegend++;
-									var textLength = ctx.measureText(data.datasets[i].title).width;
-									//If the text length is longer - make that equal to longest text!
-									widestLegend = (textLength > widestLegend)? textLength : widestLegend;
-								}
-							}
-						}
-					} else {
-						for (var i=data.length-1;i>=0; i--){
-							if(typeof(data[i].title)=="string"){
-								if(data[i].title.trim() != ""){
-									nbeltLegend++;
-									var textLength = ctx.measureText(data[i].title).width;
-									//If the text length is longer - make that equal to longest text!
-									widestLegend = (textLength > widestLegend)? textLength : widestLegend;
-								}
-							}
-						}
-					}
-
-
-					if(nbeltLegend>1){
-
-						widestLegend+=config.legendBlockSize+2*(spaceLeft+spaceRight);
-
-						availableLegendWidth=width- config.spaceLeft - config.spaceRight - 2*(borderWidth);
-						if(config.legendBorders==true)availableLegendWidth -= 2*(config.legendBordersWidth)-spaceLeft-spaceRight;
-
-						maxLegendOnLine=Math.floor(availableLegendWidth/widestLegend);
-						nbLegendLines=Math.ceil(nbeltLegend/maxLegendOnLine);
-
-						nbLegendCols=Math.ceil(nbeltLegend/nbLegendLines);
-
-						spaceLegendHeight=nbLegendLines*(config.legendFontSize+spaceBefore+spaceAfter);
-
-						yFirstLegendTextPos=height-borderWidth-config.spaceBottom - footNoteHeight-spaceLegendHeight+spaceBefore+config.legendFontSize;
-						xFirstLegendTextPos=config.spaceLeft+(width-config.spaceLeft-config.spaceRight-nbLegendCols*widestLegend)/2+spaceLeft;
-
-						if(config.legendBorders==true)
-						{
-							spaceLegendHeight+=2*config.legendBordersWidth+spaceBefore+spaceAfter;
-							yFirstLegendTextPos -=(config.legendBordersWidth+spaceAfter);
-							yLegendBorderPos=Math.floor(height-config.spaceBottom - borderWidth-footNoteHeight-spaceLegendHeight+(config.legendBordersWidth/2)+spaceBefore);
-							xLegendBorderPos=Math.floor(xFirstLegendTextPos-spaceLeft-(config.legendBordersWidth/2));
-							legendBorderHeight=Math.ceil(spaceLegendHeight-config.legendBordersWidth)-spaceBefore-spaceAfter;
-							legendBorderWidth=Math.ceil(nbLegendCols*widestLegend+config.legendBordersWidth);
-
-						}
-					}
-
-				}
-			}
-
-			// xAxisLabel
-
-			if(drawAxis) {
-
-				if(typeof(config.xAxisLabel)!= "undefined"){
-					if(config.xAxisLabel.trim() != "")
-					{
-						xAxisLabelHeight= (config.xAxisFontSize+spaceBefore+spaceAfter);
-						xAxisLabelPos= height - borderWidth-config.spaceBottom - footNoteHeight-spaceLegendHeight-spaceAfter;
-					}
-				}
-			}
-
-			xLabelWidth=0;
-
-			if(drawAxis) {
-
-				if(reverseAxis==false){widestLabel=widestXLabel;nblab=data.labels.length;}
-				else {widestLabel=widestYLabel;nblab=ylabels.length;}
-
-
-				if (availableWidth/nblab < (widestLabel+spaceBefore+spaceAfter)){
-					rotateLabels = 45;
-					if (availableWidth/nblab < Math.cos(rotateLabels) * widestLabel){
-						 rotateLabels = 90;
-						 xLabelHeight = widestLabel+spaceBefore+spaceAfter;
-						 xLabelPos= height-borderWidth-config.spaceBottom-footNoteHeight-spaceLegendHeight-xAxisLabelHeight-spaceAfter-widestLabel;
-						 xLabelWidth=2*config.scaleFontSize;
-					}
-					else{
-						 xLabelHeight = Math.sin(rotateLabels) * widestLabel+spaceBefore+spaceAfter;
-						 xLabelPos= height-borderWidth-config.spaceBottom-footNoteHeight-spaceLegendHeight-xAxisLabelHeight-spaceAfter-Math.sin(rotateLabels) * widestLabel;
-						 xLabelWidth=Math.cos(rotateLabels)*widestLabel;
-					}
-				}
-				else{
-					rotateLabels=0;
-					xLabelHeight = config.scaleFontSize+spaceBefore+spaceAfter;
-					xLabelPos= height-borderWidth-config.spaceBottom-footNoteHeight-spaceLegendHeight-xAxisLabelHeight-spaceAfter;
-					xLabelWidth=widestLabel+spaceBefore+spaceAfter;
-				}
-				leftNotUsableSize= Max ([leftNotUsableSize,borderWidth+config.spaceLeft+xLabelWidth/2] );
-				rightNotUsableSize= Max ([rightNotUsableSize,borderWidth+config.spaceRight+xLabelWidth/2] );
-				availableWidth=width-leftNotUsableSize-rightNotUsableSize;
-
-			}
-
-			bottomNotUsableHeightWithoutXLabels=borderWidth+config.spaceBottom+footNoteHeight+spaceLegendHeight+xAxisLabelHeight;
-			bottomNotUsableHeightWithXLabels=bottomNotUsableHeightWithoutXLabels+xLabelHeight;
-			availableHeight=height-topNotUsableSize-bottomNotUsableHeightWithXLabels;
-
-
-
-			// ----------------------- DRAW EXTERNAL ELEMENTS -------------------------------------------------
-
-
-
-			// Draw Borders
-
-
-			if(borderWidth>0){
+	var cache = {};
+
+	function tmpl(str, data) {
+		// Figure out if we're getting a template, or if we need to
+		// load the template - and be sure to cache the result.
+		var fn = !/\W/.test(str) ?
+		cache[str] = cache[str] ||
+		  tmpl(document.getElementById(str).innerHTML) :
+
+		// Generate a reusable function that will serve as a template
+		// generator (and which will be cached).
+		new Function("obj",
+		  "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+		  // Introduce the data as local variables using with(){}
+		  "with(obj){p.push('" +
+
+		  // Convert the template into pure JavaScript
+		  str
+			.replace(/[\r\t\n]/g, " ")
+			.split("<%").join("\t")
+			.replace(/((^|%>)[^\t]*)'/g, "$1\r")
+			.replace(/\t=(.*?)%>/g, "',$1,'")
+			.split("\t").join("');")
+			.split("%>").join("p.push('")
+			.split("\r").join("\\'")
+		+ "');}return p.join('');");
+
+		// Provide some basic currying to the user
+		return data ? fn(data) : fn;
+	};
+
+	function dispCrossText(ctx, config, posX, posY, borderX, borderY, overlay, data, animPC) {
+		var i, disptxt, txtposx, txtposy, txtAlign, txtBaseline;
+
+		for (i = 0; i < config.crossText.length; i++) {
+			if (config.crossText[i] != "" && config.crossTextOverlay[Min([i, config.crossTextOverlay.length - 1])] == overlay) {
 				ctx.save();
 				ctx.beginPath();
-				ctx.lineWidth=2*borderWidth;
-				ctx.strokeStyle=config.canvasBordersColor;
-				ctx.moveTo(0,0);
-				ctx.lineTo(0,height);
-				ctx.lineTo(width,height);
-				ctx.lineTo(width,0);
-				ctx.lineTo(0,0);
+				ctx.font = config.crossTextFontStyle[Min([i, config.crossTextFontStyle.length - 1])] + " " + config.crossTextFontSize[Min([i, config.crossTextFontSize.length - 1])] + "px " + config.crossTextFontFamily[Min([i, config.crossTextFontFamily.length - 1])];
+				ctx.fillStyle = config.crossTextFontColor[Min([i, config.crossTextFontColor.length - 1])];
+
+				textAlign = config.crossTextAlign[Min([i, config.crossTextAlign.length - 1])];
+				textBaseline = config.crossTextBaseline[Min([i, config.crossTextBaseline.length - 1])];
+
+				txtposx = 1 * config.crossTextPosX[Min([i, config.crossTextPosX.length - 1])];
+				txtposy = 1 * config.crossTextPosY[Min([i, config.crossTextPosY.length - 1])];
+
+				switch (1 * config.crossTextRelativePosX[Min([i, config.crossTextRelativePosX.length - 1])]) {
+					case 0:
+						if (textAlign == "default") textAlign = "left";
+						break;
+					case 1:
+						txtposx += borderX;
+						if (textAlign == "default") textAlign = "right";
+						break;
+					case 2:
+						txtposx += posX;
+						if (textAlign == "default") textAlign = "center";
+						break;
+					case -2:
+						txtposx += context.canvas.width / 2;
+						if (textAlign == "default") textAlign = "center";
+						break;
+					case 3:
+						txtposx += txtposx + 2 * posX - borderX;
+						if (textAlign == "default") textAlign = "left";
+						break;
+					case 4:
+						// posX=width;
+						txtposx += context.canvas.width;
+						if (textAlign == "default") textAlign = "right";
+						break;
+					default:
+						txtposx += posX;
+						if (textAlign == "default") textAlign = "center";
+						break;
+				}
+
+				switch (1 * config.crossTextRelativePosY[Min([i, config.crossTextRelativePosY.length - 1])]) {
+					case 0:
+						if (textBaseline == "default") textBaseline = "top";
+						break;
+					case 3:
+						txtposy += borderY;
+						if (textBaseline == "default") textBaseline = "top";
+						break;
+					case 2:
+						txtposy += posY;
+						if (textBaseline == "default") textBaseline = "middle";
+						break;
+					case -2:
+						txtposy += context.canvas.height / 2;
+						if (textBaseline == "default") textBaseline = "middle";
+						break;
+					case 1:
+						txtposy += txtposy + 2 * posY - borderY;
+						if (textBaseline == "default") textBaseline = "bottom";
+						break;
+					case 4:
+						txtposy += context.canvas.height;
+						if (textBaseline == "default") textBaseline = "bottom";
+						break;
+					default:
+						txtposy += posY;
+						if (textBaseline == "default") textBaseline = "middle";
+						break;
+				}
+
+				ctx.textAlign = textAlign;
+				ctx.textBaseline = textBaseline;
+
+				ctx.translate(1 * txtposx, 1 * txtposy);
+
+				ctx.rotate(config.crossTextAngle[Min([i, config.crossTextAngle.length - 1])]);
+
+				if (config.crossText[i].substring(0, 1) == "%") {
+					if (typeof config.crossTextFunction == "function") disptxt = config.crossTextFunction(i, config.crossText[i], ctx, config, posX, posY, borderX, borderY, overlay, data, animPC);
+				}
+				else disptxt = config.crossText[i];
+
+				ctx.fillText(disptxt, 0, 0);
+				ctx.stroke();
+				ctx.restore();
+			}
+		}
+	};
+
+	//****************************************************************************************
+	function setMeasures(data, config, ctx, height, width, ylabels, reverseLegend, reverseAxis, drawAxis, drawLegendOnData) {
+
+		if(config.canvasBackgroundColor != "none") ctx.canvas.style.background =config.canvasBackgroundColor;
+
+		var borderWidth = 0;
+
+		var yAxisLabelWidth = 0;
+		var yAxisLabelPos = 0;
+
+		var graphTitleHeight = 0;
+		var graphTitlePosY = 0;
+
+		var graphSubTitleHeight = 0;
+		var graphSubTitlePosY = 0;
+
+		var footNoteHeight = 0;
+		var footNotePosY = 0;
+
+		var yAxisUnitHeight = 0;
+		var yAxisUnitPosY = 0;
+
+		var widestLegend = 0;
+		var nbeltLegend = 0;
+		var nbLegendLines = 0;
+		var nbLegendCols = 0;
+		var spaceLegendHeight = 0;
+		var xFirstLegendTextPos = 0;
+		var yFirstLegendTextPos = 0;
+		var xLegendBorderPos = 0;
+		var yLegendBorderPos = 0;
+
+		var yAxisLabelWidth = 0;
+		var yAxisLabelPos = 0;
+
+		var xAxisLabelHeight = 0;
+		var xLabelHeight = 0;
+
+		var widestXLabel = 1;
+
+		var leftNotUsableSize = 0;
+		var rightNotUsableSize = 0;
+
+		var rotateLabels = 0;
+		var xLabelPos = 0;
+
+		// Borders
+
+		if (config.canvasBorders) borderWidth = config.canvasBordersWidth;
+
+		// compute widest X label
+
+		if (drawAxis) {
+			ctx.font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
+			for (var i = 0; i < data.labels.length; i++) {
+				var textLength = ctx.measureText(fmtChartJS(config,data.labels[i],config.fmtXLabel)).width;
+				//If the text length is longer - make that equal to longest text!
+				widestXLabel = (textLength > widestXLabel) ? textLength : widestXLabel;
+			}
+		}
+
+		// compute Y Label Width
+
+		widestYLabel = 1;
+
+		if (drawAxis) {
+			if (ylabels != null) {
+				ctx.font = config.scaleFontStyle + " " + config.scaleFontSize + "px " + config.scaleFontFamily;
+				for (var i = ylabels.length - 1; i >= 0; i--) {
+					if (typeof (ylabels[i]) == "string") {
+						if (ylabels[i].trim() != "") {
+							var textLength = ctx.measureText(fmtChartJS(config,ylabels[i],config.fmtYLabel)).width;
+							//If the text length is longer - make that equal to longest text!
+							widestYLabel = (textLength > widestYLabel) ? textLength : widestYLabel;
+						}
+					}
+				}
+			}
+		}
+
+		// yAxisLabel
+		leftNotUsableSize = borderWidth + config.spaceLeft
+		rightNotUsableSize = borderWidth + config.spaceRight;
+
+		if (drawAxis) {
+			if (typeof (config.yAxisLabel) != "undefined") {
+				if (config.yAxisLabel.trim() != "") {
+					yAxisLabelWidth = (config.yAxisFontSize + config.yAxisLabelSpaceLeft + config.yAxisLabelSpaceRight);
+					yAxisLabelPosLeft = borderWidth + config.spaceLeft + config.yAxisLabelSpaceLeft + config.yAxisFontSize;
+					yAxisLabelPosRight = width - borderWidth - config.spaceRight - config.yAxisLabelSpaceRight - config.yAxisFontSize;
+				}
+			}
+
+			if (config.yAxisLeft) {
+				if (reverseAxis == false) leftNotUsableSize = borderWidth + config.spaceLeft + yAxisLabelWidth + widestYLabel + 3 + config.yAxisSpaceLeft + config.yAxisSpaceRight;
+				else leftNotUsableSize = borderWidth + config.spaceLeft + yAxisLabelWidth + widestXLabel + 3 + config.yAxisSpaceLeft + config.yAxisSpaceRight;
+			}
+
+			if (config.yAxisRight) {
+				if (reverseAxis == false) rightNotUsableSize = borderWidth + config.spaceRight + yAxisLabelWidth + widestYLabel + 3 + config.yAxisSpaceLeft + config.yAxisSpaceRight;
+				else rightNotUsableSize = borderWidth + config.spaceRight + yAxisLabelWidth + widestXLabel + 3 + config.yAxisSpaceLeft + config.yAxisSpaceRight;
+			}
+		}
+
+		availableWidth = width - leftNotUsableSize - rightNotUsableSize;
+
+		// Title
+
+		if (config.graphTitle.trim() != "") {
+			graphTitleHeight = (config.graphTitleFontSize + config.graphTitleSpaceBefore + config.graphTitleSpaceAfter);
+			graphTitlePosY = borderWidth + config.spaceTop + graphTitleHeight - config.graphTitleSpaceAfter;
+		}
+
+		// subTitle
+
+		if (config.graphSubTitle.trim() != "") {
+			graphSubTitleHeight = (config.graphSubTitleFontSize + config.graphSubTitleSpaceBefore + config.graphSubTitleSpaceAfter);
+			graphSubTitlePosY = borderWidth + config.spaceTop + graphTitleHeight + graphSubTitleHeight - config.graphSubTitleSpaceAfter;
+		}
+
+		// yAxisUnit
+
+		if (drawAxis) {
+			if (typeof (config.yAxisUnit) != "undefined") {
+				if (config.yAxisUnit.trim() != "") {
+					yAxisUnitHeight = (config.yAxisUnitFontSize + config.yAxisUnitSpaceBefore + config.yAxisUnitSpaceAfter);
+					yAxisUnitPosY = borderWidth + config.spaceTop + graphTitleHeight + graphSubTitleHeight + yAxisUnitHeight - config.yAxisUnitSpaceAfter;
+				}
+			}
+		}
+
+		topNotUsableSize = borderWidth + config.spaceTop + graphTitleHeight + graphSubTitleHeight + yAxisUnitHeight + config.graphSpaceBefore;
+
+		// footNote
+
+		if (typeof (config.footNote) != "undefined") {
+			if (config.footNote.trim() != "") {
+				footNoteHeight = (config.footNoteFontSize + config.footNoteSpaceBefore + config.footNoteSpaceAfter);
+				footNotePosY = height - config.spaceBottom - borderWidth - config.footNoteSpaceAfter;
+			}
+		}
+
+		// compute space for Legend
+		if (typeof (config.legend) != "undefined") {
+			if (config.legend == true) {
+				ctx.font = config.legendFontStyle + " " + config.legendFontSize + "px " + config.legendFontFamily;
+				if (drawLegendOnData) {
+					for (var i = data.datasets.length - 1; i >= 0; i--) {
+						if (typeof (data.datasets[i].title) == "string") {
+
+							if (data.datasets[i].title.trim() != "") {
+								nbeltLegend++;
+								var textLength = ctx.measureText(data.datasets[i].title).width;
+								//If the text length is longer - make that equal to longest text!
+								widestLegend = (textLength > widestLegend) ? textLength : widestLegend;
+							}
+						}
+					}
+				} else {
+					for (var i = data.length - 1; i >= 0; i--) {
+						if (typeof (data[i].title) == "string") {
+							if (data[i].title.trim() != "") {
+								nbeltLegend++;
+								var textLength = ctx.measureText(data[i].title).width;
+								//If the text length is longer - make that equal to longest text!
+								widestLegend = (textLength > widestLegend) ? textLength : widestLegend;
+							}
+						}
+					}
+				}
+
+				if (nbeltLegend > 1) {
+					widestLegend += config.legendBlockSize + config.legendSpaceBetweenBoxAndText;
+
+					availableLegendWidth = width - config.spaceLeft - config.spaceRight - 2 * (borderWidth) - config.legendSpaceLeftText - config.legendSpaceRightText;
+					if (config.legendBorders == true) availableLegendWidth -= 2 * (config.legendBordersWidth) - config.legendBordersSpaceLeft - config.legendBordersSpaceRight;
+
+					maxLegendOnLine = Math.floor((availableLegendWidth + config.legendSpaceBetweenTextHorizontal )/ (widestLegend + config.legendSpaceBetweenTextHorizontal ));
+					nbLegendLines = Math.ceil(nbeltLegend / maxLegendOnLine);
+
+					nbLegendCols = Math.ceil(nbeltLegend / nbLegendLines);
+
+					spaceLegendHeight = nbLegendLines * (config.legendFontSize + config.legendSpaceBetweenTextVertical) - config.legendSpaceBetweenTextVertical + config.legendSpaceBeforeText + config.legendSpaceAfterText;
+
+					yFirstLegendTextPos = height - borderWidth - config.spaceBottom - footNoteHeight - spaceLegendHeight + config.legendSpaceBeforeText + config.legendFontSize;
+
+					xFirstLegendTextPos = config.spaceLeft + (width - config.spaceLeft - config.spaceRight - nbLegendCols * (widestLegend + config.legendSpaceBetweenTextHorizontal) + config.legendSpaceBetweenTextHorizontal ) / 2 ;
+					if (config.legendBorders == true) {
+						spaceLegendHeight += 2 * config.legendBordersWidth + config.legendBordersSpaceBefore + config.legendBordersSpaceAfter;
+						yFirstLegendTextPos -= (config.legendBordersWidth + config.legendBordersSpaceAfter);
+						yLegendBorderPos = Math.floor(height - borderWidth - config.spaceBottom  - footNoteHeight - spaceLegendHeight + (config.legendBordersWidth / 2) + config.legendBordersSpaceBefore);
+						xLegendBorderPos = Math.floor(xFirstLegendTextPos - config.legendSpaceLeftText - (config.legendBordersWidth / 2));
+						legendBorderHeight = Math.ceil(spaceLegendHeight - config.legendBordersWidth) - config.legendBordersSpaceBefore - config.legendBordersSpaceAfter;
+						legendBorderWidth = Math.ceil(nbLegendCols * (widestLegend + config.legendSpaceBetweenTextHorizontal)) - config.legendSpaceBetweenTextHorizontal + config.legendBordersWidth + config.legendSpaceRightText + config.legendSpaceLeftText;
+					}
+				}
+			}
+		}
+
+		// xAxisLabel
+
+		if (drawAxis) {
+			if (typeof (config.xAxisLabel) != "undefined") {
+				if (config.xAxisLabel.trim() != "") {
+					xAxisLabelHeight = (config.xAxisFontSize + config.xAxisLabelSpaceBefore + config.xAxisLabelSpaceAfter);
+					xAxisLabelPos = height - borderWidth - config.spaceBottom - footNoteHeight - spaceLegendHeight - config.xAxisLabelSpaceAfter;
+				}
+			}
+		}
+
+		xLabelWidth = 0;
+
+		if (drawAxis && (config.xAxisBottom || config.xAxisTop)) {
+			if (reverseAxis == false) { widestLabel = widestXLabel; nblab = data.labels.length; }
+			else { widestLabel = widestYLabel; nblab = ylabels.length; }
+			if (config.rotateLabels == "smart") {
+				rotateLabels = 0;
+				if ((availableWidth + config.xAxisSpaceBetweenLabels) / nblab < (widestLabel + config.xAxisSpaceBetweenLabels)) {
+					rotateLabels = 45;
+					if (availableWidth / nblab < Math.abs(Math.cos(rotateLabels * Math.PI / 180) * widestLabel)) {
+						rotateLabels = 90;
+					}
+				}
+			} else {
+				rotateLabels = config.rotateLabels
+				if (rotateLabels < 0) rotateLabels = 0;
+				if (rotateLabels > 180) rotateLabels = 180;
+			}
+
+			if (rotateLabels > 90) rotateLabels += 180;
+			xLabelHeight = Math.abs(Math.sin(rotateLabels * Math.PI / 180) * widestLabel) + Math.abs(Math.sin((rotateLabels + 90) * Math.PI / 180) * config.scaleFontSize) + config.xAxisSpaceBefore + config.xAxisSpaceAfter;
+			xLabelPos = height - borderWidth - config.spaceBottom - footNoteHeight - spaceLegendHeight - xAxisLabelHeight - (xLabelHeight - config.xAxisSpaceBefore);
+			xLabelWidth = Math.abs(Math.cos(rotateLabels * Math.PI / 180) * widestLabel) + Math.abs(Math.cos((rotateLabels + 90) * Math.PI / 180) * config.scaleFontSize);
+
+			leftNotUsableSize = Max([leftNotUsableSize, borderWidth + config.spaceLeft + xLabelWidth / 2]);
+			rightNotUsableSize = Max([rightNotUsableSize, borderWidth + config.spaceRight + xLabelWidth / 2]);
+			availableWidth = width - leftNotUsableSize - rightNotUsableSize;
+		}
+
+		if(config.xAxisBottom)
+		{
+		  bottomNotUsableHeightWithoutXLabels = borderWidth + config.spaceBottom + footNoteHeight + spaceLegendHeight + xAxisLabelHeight;
+		  bottomNotUsableHeightWithXLabels = bottomNotUsableHeightWithoutXLabels + xLabelHeight;
+		  availableHeight = height - topNotUsableSize - bottomNotUsableHeightWithXLabels;
+		}
+		else
+		{
+		  bottomNotUsableHeightWithoutXLabels = borderWidth + config.spaceBottom + footNoteHeight + spaceLegendHeight + xAxisLabelHeight;
+		  bottomNotUsableHeightWithXLabels = bottomNotUsableHeightWithoutXLabels ;
+		  availableHeight = height - topNotUsableSize - bottomNotUsableHeightWithXLabels;
+		}
+
+		// ----------------------- DRAW EXTERNAL ELEMENTS -------------------------------------------------
+
+		// Draw Borders
+
+		if (borderWidth > 0) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.lineWidth = 2 * borderWidth;
+			ctx.strokeStyle = config.canvasBordersColor;
+			ctx.moveTo(0, 0);
+			ctx.lineTo(0, height);
+			ctx.lineTo(width, height);
+			ctx.lineTo(width, 0);
+			ctx.lineTo(0, 0);
+			ctx.stroke();
+			ctx.restore();
+		}
+
+		// Draw Graph Title
+
+		if (graphTitleHeight > 0) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.font = config.graphTitleFontStyle + " " + config.graphTitleFontSize + "px " + config.graphTitleFontFamily;
+			ctx.fillStyle = config.graphTitleFontColor;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "bottom";
+			ctx.translate(config.spaceLeft + (width - config.spaceLeft - config.spaceRight) / 2, graphTitlePosY);
+			ctx.fillText(config.graphTitle, 0, 0);
+			ctx.stroke();
+			ctx.restore();
+		}
+
+		// Draw Graph Sub-Title
+
+		if (graphSubTitleHeight > 0) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.font = config.graphSubTitleFontStyle + " " + config.graphSubTitleFontSize + "px " + config.graphSubTitleFontFamily;
+			ctx.fillStyle = config.graphSubTitleFontColor;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "bottom";
+			ctx.translate(config.spaceLeft + (width - config.spaceLeft - config.spaceRight) / 2, graphSubTitlePosY);
+			ctx.fillText(config.graphSubTitle, 0, 0);
+			ctx.stroke();
+			ctx.restore();
+		}
+
+		// Draw Y Axis Unit
+
+		if (yAxisUnitHeight > 0) {
+			if (config.yAxisLeft) {
+				ctx.save();
+				ctx.beginPath();
+				ctx.font = config.yAxisUnitFontStyle + " " + config.yAxisUnitFontSize + "px " + config.yAxisUnitFontFamily;
+				ctx.fillStyle = config.yAxisUnitFontColor;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "bottom";
+				ctx.translate(leftNotUsableSize, yAxisUnitPosY);
+				ctx.fillText(config.yAxisUnit, 0, 0);
+				ctx.stroke();
+				ctx.restore();
+			}
+			if (config.yAxisRight) {
+				ctx.save();
+				ctx.beginPath();
+				ctx.font = config.yAxisUnitFontStyle + " " + config.yAxisUnitFontSize + "px " + config.yAxisUnitFontFamily;
+				ctx.fillStyle = config.yAxisUnitFontColor;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "bottom";
+				ctx.translate(width - rightNotUsableSize, yAxisUnitPosY);
+				ctx.fillText(config.yAxisUnit, 0, 0);
+				ctx.stroke();
+				ctx.restore();
+			}
+		}
+
+		// Draw Y Axis Label
+
+		if (yAxisLabelWidth > 0) {
+			if (config.yAxisLeft) {
+				ctx.save();
+				ctx.beginPath();
+				ctx.font = config.yAxisFontStyle + " " + config.yAxisFontSize + "px " + config.yAxisFontFamily;
+				ctx.fillStyle = config.yAxisFontColor;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "bottom";
+				ctx.translate(yAxisLabelPosLeft, topNotUsableSize + (availableHeight / 2));
+				ctx.rotate(-(90 * (Math.PI / 180)));
+				ctx.fillText(config.yAxisLabel, 0, 0);
+				ctx.stroke();
+				ctx.restore();
+			}
+			if (config.yAxisRight) {
+				ctx.save();
+				ctx.beginPath();
+				ctx.font = config.yAxisFontStyle + " " + config.yAxisFontSize + "px " + config.yAxisFontFamily;
+				ctx.fillStyle = config.yAxisFontColor;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "bottom";
+				ctx.translate(yAxisLabelPosRight, topNotUsableSize + (availableHeight / 2));
+				ctx.rotate(+(90 * (Math.PI / 180)));
+				ctx.fillText(config.yAxisLabel, 0, 0);
+				ctx.stroke();
+				ctx.restore();
+			}
+		}
+
+		// Draw X Axis Label
+
+		if (xAxisLabelHeight > 0) {
+			if (config.xAxisBottom) {
+			  ctx.save();
+			  ctx.beginPath();
+			  ctx.font = config.xAxisFontStyle + " " + config.xAxisFontSize + "px " + config.xAxisFontFamily;
+			  ctx.fillStyle = config.xAxisFontColor;
+			  ctx.textAlign = "center";
+			  ctx.textBaseline = "bottom";
+			  ctx.translate(leftNotUsableSize + (availableWidth / 2), xAxisLabelPos);
+			  ctx.fillText(config.xAxisLabel, 0, 0);
+			  ctx.stroke();
+			  ctx.restore();
+			}
+		}
+
+		// Draw Legend
+
+		if (nbeltLegend > 1) {
+			if (config.legendBorders == true) {
+				ctx.save();
+				ctx.beginPath();
+
+				ctx.lineWidth = config.legendBordersWidth;
+				ctx.strokeStyle = config.legendBordersColors;
+
+				ctx.moveTo(xLegendBorderPos, yLegendBorderPos);
+				ctx.lineTo(xLegendBorderPos, yLegendBorderPos + legendBorderHeight);
+				ctx.lineTo(xLegendBorderPos + legendBorderWidth, yLegendBorderPos + legendBorderHeight);
+				ctx.lineTo(xLegendBorderPos + legendBorderWidth, yLegendBorderPos);
+				ctx.lineTo(xLegendBorderPos, yLegendBorderPos);
+				ctx.lineTo(xLegendBorderPos + legendBorderWidth, yLegendBorderPos);
+				ctx.lineTo(xLegendBorderPos, yLegendBorderPos);
+				ctx.lineTo(xLegendBorderPos, yLegendBorderPos + legendBorderHeight);
+
 				ctx.stroke();
 				ctx.restore();
 			}
 
+			nbcols = nbLegendCols - 1;
+			ypos = yFirstLegendTextPos - (config.legendFontSize + config.legendSpaceBetweenTextVertical);
+			xpos = 0;
 
-			// Draw Graph Title
+			if (drawLegendOnData) fromi = data.datasets.length;
+			else fromi = data.length;
 
-			if(graphTitleHeight>0){
-					ctx.save();
-					ctx.beginPath();
-					ctx.font = config.graphTitleFontStyle + " " + config.graphTitleFontSize+"px " + config.graphTitleFontFamily;
-					ctx.fillStyle = config.graphTitleFontColor;
-					ctx.textAlign = "center";
-					ctx.translate(config.spaceLeft+(width-config.spaceLeft-config.spaceRight)/2,graphTitlePosY);
-					ctx.fillText(config.graphTitle, 0,0);
-					ctx.stroke();
-					ctx.restore();
-
-			}
-
-			// Draw Graph Sub-Title
-
-			if(graphSubTitleHeight>0){
-					ctx.save();
-					ctx.beginPath();
-					ctx.font = config.graphSubTitleFontStyle + " " + config.graphSubTitleFontSize+"px " + config.graphSubTitleFontFamily;
-					ctx.fillStyle = config.graphSubTitleFontColor;
-					ctx.textAlign = "center";
-					ctx.translate(config.spaceLeft+(width-config.spaceLeft-config.spaceRight)/2,graphSubTitlePosY);
-					ctx.fillText(config.graphSubTitle, 0,0);
-					ctx.stroke();
-					ctx.restore();
-			}
-
-			// Draw Y Axis Unit
-
-
-			if(yAxisUnitHeight>0){
-					if(config.yAxisLeft)
-					{
-						ctx.save();
-						ctx.beginPath();
-						ctx.font = config.yAxisUnitFontStyle + " " + config.yAxisUnitFontSize+"px " + config.yAxisUnitFontFamily;
-						ctx.fillStyle = config.yAxisUnitFontColor;
-						ctx.textAlign = "center";
-						ctx.translate(leftNotUsableSize,yAxisUnitPosY);
-						ctx.fillText(config.yAxisUnit, 0,0);
-						ctx.stroke();
-						ctx.restore();
-					}
-					if(config.yAxisRight)
-					{
-						ctx.save();
-						ctx.beginPath();
-						ctx.font = config.yAxisUnitFontStyle + " " + config.yAxisUnitFontSize+"px " + config.yAxisUnitFontFamily;
-						ctx.fillStyle = config.yAxisUnitFontColor;
-						ctx.textAlign = "center";
-						ctx.translate(width-rightNotUsableSize,yAxisUnitPosY);
-						ctx.fillText(config.yAxisUnit, 0,0);
-						ctx.stroke();
-						ctx.restore();
-					}
-			}
-
-
-
-			// Draw Y Axis Label
-
-			if(yAxisLabelWidth>0){
-					if(config.yAxisLeft) {
-						ctx.save();
-						ctx.beginPath();
-					 ctx.font = config.yAxisFontStyle + " " + config.yAxisFontSize+"px " + config.yAxisFontFamily;
-					 ctx.fillStyle = config.yAxisFontColor;
-						ctx.textAlign = "center";
-						ctx.translate(yAxisLabelPosLeft,topNotUsableSize+(availableHeight/2));
-						ctx.rotate(-(90 * (Math.PI/180)));
-						ctx.fillText(config.yAxisLabel, 0,0);
-						ctx.stroke();
-						ctx.restore();
-					}
-					if(config.yAxisRight) {
-						ctx.save();
-						ctx.beginPath();
-						ctx.font = config.yAxisFontStyle + " " + config.yAxisFontSize+"px " + config.yAxisFontFamily;
-						ctx.fillStyle = config.yAxisFontColor;
-						ctx.textAlign = "center";
-						ctx.translate(yAxisLabelPosRight,topNotUsableSize+(availableHeight/2));
-						ctx.rotate(+(90 * (Math.PI/180)));
-						ctx.fillText(config.yAxisLabel, 0,0);
-						ctx.stroke();
-						ctx.restore();
-					}
-			}
-
-
-
-			// Draw X Axis Label
-
-			if(xAxisLabelHeight>0){
-					ctx.save();
-					ctx.beginPath();
-					ctx.font = config.yAxisFontStyle + " " + config.yAxisFontSize+"px " + config.yAxisFontFamily;
-					ctx.fillStyle = config.yAxisFontColor;
-					ctx.textAlign = "center";
-					ctx.translate(leftNotUsableSize+(availableWidth/2),xAxisLabelPos);
-					ctx.fillText(config.xAxisLabel, 0,0);
-					ctx.stroke();
-					ctx.restore();
-			}
-
-			// Draw Legend
-
-
-
-			if(nbeltLegend>1)
-			{
-				if(config.legendBorders==true)
-				{
-					ctx.save();
-					ctx.beginPath();
-
-					ctx.lineWidth=config.legendBordersWidth;
-					ctx.strokeStyle=config.legendBordersColors;
-
-					ctx.moveTo(xLegendBorderPos,yLegendBorderPos);
-					ctx.lineTo(xLegendBorderPos,yLegendBorderPos+legendBorderHeight);
-					ctx.lineTo(xLegendBorderPos+legendBorderWidth,yLegendBorderPos+legendBorderHeight);
-					ctx.lineTo(xLegendBorderPos+legendBorderWidth,yLegendBorderPos);
-					ctx.lineTo(xLegendBorderPos,yLegendBorderPos);
-					ctx.lineTo(xLegendBorderPos+legendBorderWidth,yLegendBorderPos);
-					ctx.lineTo(xLegendBorderPos,yLegendBorderPos);
-					ctx.lineTo(xLegendBorderPos,yLegendBorderPos+legendBorderHeight);
-
-					ctx.stroke();
-					ctx.restore();
-
-
-
+			for (var i = fromi - 1; i >= 0; i--) {
+				orderi = i;
+				if (reverseLegend) {
+					if (drawLegendOnData) orderi = data.datasets.length - i - 1;
+					else orderi = data.length - i - 1;
 				}
 
-				nbcols=nbLegendCols-1;
-				ypos=yFirstLegendTextPos-(config.legendFontSize+spaceBefore+spaceAfter);
-				xpos=0;
+				if (drawLegendOnData) tpof = typeof (data.datasets[orderi].title);
+				else tpof = typeof (data[orderi].title)
 
-
-
-				if(drawLegendOnData)fromi=data.datasets.length;
-				else fromi=data.length;
-
-
-				for (var i=fromi-1;i>=0; i--){
-
-					orderi=i;
-					if(reverseLegend)
-					{
-						if(drawLegendOnData)orderi=data.datasets.length-i-1;
-						else orderi=data.length-i-1;
-					}
-
-					if(drawLegendOnData)tpof=typeof(data.datasets[orderi].title);
-					else tpof=typeof(data[orderi].title)
-
-					if(tpof=="string"){
-						if(drawLegendOnData)lgtxt=data.datasets[orderi].title.trim();
-						else lgtxt=data[orderi].title.trim();
-						if(lgtxt != ""){
-
-							nbcols++;
-							if(nbcols==nbLegendCols)
-							{
-								nbcols=0;
-								xpos=xFirstLegendTextPos;
-								ypos+=config.legendFontSize+spaceBefore+spaceAfter;
-
-							}
-							else
-							{
-								xpos+=widestLegend;
-							}
-
-							ctx.save();
-							ctx.beginPath();
-
-
-							if(drawLegendOnData) ctx.strokeStyle = data.datasets[orderi].strokeColor;
-							else ctx.strokeStyle = data[orderi].color;
-
-							if (config.datasetFill){
-									ctx.lineWidth = 1;
-									ctx.moveTo(xpos+2,ypos);
-									ctx.lineTo(xpos+2+config.legendBlockSize,ypos);
-									ctx.lineTo(xpos+2+config.legendBlockSize,ypos-config.legendFontSize+2);
-									ctx.lineTo(xpos+2,ypos-config.legendFontSize+2);
-									ctx.lineTo(xpos+2,ypos);
-									ctx.closePath();
-									if(drawLegendOnData) ctx.fillStyle = data.datasets[orderi].fillColor;
-									else ctx.fillStyle = data[orderi].color;
-									ctx.fill();
-							}
-							else
-							{
-								ctx.lineWidth = config.datasetStrokeWidth;
-								ctx.moveTo(xpos+2,ypos-(config.legendFontSize/2));
-								ctx.lineTo(xpos+2+config.legendBlockSize,ypos-(config.legendFontSize/2));
-							}
-							ctx.stroke();
-							ctx.restore();
-
-
-
-							ctx.save();
-							ctx.beginPath();
-							ctx.font = config.legendFontStyle + " " + config.legendFontSize+"px " + config.legendFontFamily;
-
-
-							ctx.fillStyle = config.legendFontColor;
-							ctx.textAlign = "left";
-
-							ctx.translate(xpos+config.legendBlockSize+spaceBefore+spaceAfter,ypos);
-							ctx.fillText(lgtxt, 0,0);
-							ctx.stroke();
-							ctx.restore();
+				if (tpof == "string") {
+					if (drawLegendOnData) lgtxt = data.datasets[orderi].title.trim();
+					else lgtxt = data[orderi].title.trim();
+					if (lgtxt != "") {
+						nbcols++;
+						if (nbcols == nbLegendCols) {
+							nbcols = 0;
+							xpos = xFirstLegendTextPos;
+							ypos += config.legendFontSize + config.legendSpaceBetweenTextVertical;
 						}
+						else {
+							xpos += widestLegend + config.legendSpaceBetweenTextHorizontal;
+						}
+
+						ctx.save();
+						ctx.beginPath();
+
+						if (drawLegendOnData) ctx.strokeStyle = data.datasets[orderi].strokeColor;
+						else ctx.strokeStyle = data[orderi].color;
+
+						if (config.datasetFill) {
+							ctx.lineWidth = 1;
+							ctx.moveTo(xpos , ypos);
+							ctx.lineTo(xpos + config.legendBlockSize, ypos);
+							ctx.lineTo(xpos + config.legendBlockSize, ypos - config.legendFontSize );
+							ctx.lineTo(xpos , ypos - config.legendFontSize );
+							ctx.lineTo(xpos , ypos);
+							ctx.closePath();
+							if (drawLegendOnData) ctx.fillStyle = data.datasets[orderi].fillColor;
+							else ctx.fillStyle = data[orderi].color;
+							ctx.fill();
+						}
+						else {
+							ctx.lineWidth = config.datasetStrokeWidth;
+							ctx.moveTo(xpos + 2, ypos - (config.legendFontSize / 2));
+							ctx.lineTo(xpos + 2 + config.legendBlockSize, ypos - (config.legendFontSize / 2));
+						}
+						ctx.stroke();
+						ctx.restore();
+						ctx.save();
+						ctx.beginPath();
+						ctx.font = config.legendFontStyle + " " + config.legendFontSize + "px " + config.legendFontFamily;
+						ctx.fillStyle = config.legendFontColor;
+						ctx.textAlign = "left";
+						ctx.textBaseline = "bottom";
+						ctx.translate(xpos + config.legendBlockSize + config.legendSpaceBetweenBoxAndText, ypos);
+						ctx.fillText(lgtxt, 0, 0);
+						ctx.stroke();
+						ctx.restore();
 					}
 				}
-
 			}
+		}
 
-			// Draw FootNote
-			if(config.footNote.trim() != "")  {
-					ctx.save();
-					ctx.font = config.footNoteFontStyle + " " + config.footNoteFontSize+"px " + config.footNoteFontFamily;
-					ctx.fillStyle = config.footNoteFontColor;
-					ctx.textAlign = "center";
-					ctx.translate(leftNotUsableSize+(availableWidth/2),footNotePosY);
-					ctx.fillText(config.footNote, 0,0);
-					ctx.stroke();
-					ctx.restore();
-			}
+		// Draw FootNote
+		if (config.footNote.trim() != "") {
+			ctx.save();
+			ctx.font = config.footNoteFontStyle + " " + config.footNoteFontSize + "px " + config.footNoteFontFamily;
+			ctx.fillStyle = config.footNoteFontColor;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "bottom";
+			ctx.translate(leftNotUsableSize + (availableWidth / 2), footNotePosY);
+			ctx.fillText(config.footNote, 0, 0);
+			ctx.stroke();
+			ctx.restore();
+		}
 
-			clrx=leftNotUsableSize;
-			clrwidth=availableWidth;
+		clrx = leftNotUsableSize;
+		clrwidth = availableWidth;
+		clry = topNotUsableSize;
+		clrheight = availableHeight;
 
-			if(config.yAxisLeft)
-			{
-				clrx-=yLabelsWidth;
-				clrwidth+=yLabelsWidth;
-			}
-			if(config.yAxisRight)
-			{
-				clrwidth+=yLabelsWidth;
-			}
+		return {
+			leftNotUsableSize: leftNotUsableSize,
+			rightNotUsableSize: rightNotUsableSize,
+			availableWidth: availableWidth,
+			topNotUsableSize: topNotUsableSize,
+			bottomNotUsableHeightWithoutXLabels: bottomNotUsableHeightWithoutXLabels,
+			bottomNotUsableHeightWithXLabels: bottomNotUsableHeightWithXLabels,
+			availableHeight: availableHeight,
+			widestXLabel: widestXLabel,
+			rotateLabels: rotateLabels,
+			xLabelPos: xLabelPos,
+			clrx: clrx,
+			clry: clry,
+			clrwidth: clrwidth,
+			clrheight: clrheight
+		};
+	} ;
+
+	function log10(val) {
+		return Math.log(val) / Math.LN10;
+	} ;
+
+	function setRect(ctx,config)
+	{
+		if(config.clearRect){
+		  clear(ctx);
+		  ctx.clearRect(0, 0, width, height);
+		} else {
+		  clear(ctx);
+		  ctx.clearRect(0, 0, width, height);
+		  ctx.fillStyle = config.savePngBackgroundColor;
+		  ctx.strokeStyle = config.savePngBackgroundColor;
+		  ctx.beginPath();
+		  ctx.moveTo(0,0);
+		  ctx.lineTo(0,ctx.canvas.height);
+		  ctx.lineTo(ctx.canvas.width,ctx.canvas.height);
+		  ctx.lineTo(ctx.canvas.width,0);
+		  ctx.lineTo(0,0);
+		  ctx.stroke();
+		  ctx.fill();
+
+		}
+	} ;
 
 
+	function defMouse(ctx,data,config,tpgraph) {
 
-			clry=topNotUsableSize;
+		if (config.annotateDisplay == true) {
+			if (cursorDivCreated == false) oCursor = new makeCursorObj('divCursor');
+			if (isIE() < 9 && isIE() != false) ctx.canvas.attachEvent("on" + config.annotateFunction.split(' ')[0], function (event) {
+			  if ((config.annotateFunction.split(' ')[1]=="left" && event.which==1) ||
+				  (config.annotateFunction.split(' ')[1]=="middle" && event.which==2) ||
+				  (config.annotateFunction.split(' ')[1]=="right" && event.which==3) ||
+				  (typeof(config.annotateFunction.split(' ')[1])!="string")) doMouseMove(ctx, config, event)
+			  });
+			else ctx.canvas.addEventListener(config.annotateFunction.split(' ')[0], function (event) {
+			  if ((config.annotateFunction.split(' ')[1]=="left" && event.which==1) ||
+				  (config.annotateFunction.split(' ')[1]=="middle" && event.which==2) ||
+				  (config.annotateFunction.split(' ')[1]=="right" && event.which==3) ||
+				  (typeof(config.annotateFunction.split(' ')[1])!="string")) doMouseMove(ctx, config, event)
+			}, false);
+		}
 
-			clrheight=availableHeight+xLabelHeight;
+		if(config.savePng)
+		{
+			if (isIE() < 9 && isIE() != false) ctx.canvas.attachEvent("on"+ config.savePngFunction.split(' ')[0], function(event) {
+			  if ((config.savePngFunction.split(' ')[1]=="left" && event.which==1) ||
+				  (config.savePngFunction.split(' ')[1]=="middle" && event.which==2) ||
+				  (config.savePngFunction.split(' ')[1]=="right" && event.which==3) ||
+				  (typeof(config.savePngFunction.split(' ')[1])!="string")) saveCanvas(ctx,data,config,tpgraph);
+			  });
+			else ctx.canvas.addEventListener(config.savePngFunction.split(' ')[0], function (event) {
+			  if ((config.savePngFunction.split(' ')[1]=="left" && event.which==1) ||
+				  (config.savePngFunction.split(' ')[1]=="middle" && event.which==2) ||
+				  (config.savePngFunction.split(' ')[1]=="right" && event.which==3) ||
+				  (typeof(config.savePngFunction.split(' ')[1])!="string")) saveCanvas(ctx,data,config,tpgraph);
+			  }
+			  ,false);
 
+		}
 
-			return {
+	};
 
-				leftNotUsableSize : leftNotUsableSize,
-				rightNotUsableSize : rightNotUsableSize,
-				availableWidth : availableWidth,
-				topNotUsableSize : topNotUsableSize,
-				bottomNotUsableHeightWithoutXLabels : bottomNotUsableHeightWithoutXLabels,
-				bottomNotUsableHeightWithXLabels : bottomNotUsableHeightWithXLabels,
-				availableHeight : availableHeight,
-				widestXLabel : widestXLabel,
-				rotateLabels : rotateLabels,
-				xLabelPos : xLabelPos,
-				clrx : clrx,
-				clry : clry,
-				clrwidth : clrwidth,
-				clrheight : clrheight
-
-			};
-	 }
 };
 
 
