@@ -518,6 +518,7 @@ function doMouseMove(ctx, config, event) {
 		v10 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][2],config.fmtV10);       // v10=pos Y of point;
 		v11 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][10],config.fmtV11);      // v11=position in Dataset;
 		v12 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][11],config.fmtV12);      // v12=position in Dataset[v11].Data;
+		v13 = fmtChartJS(config,jsGraphAnnotate[ctx.canvas.id][i][12],config.fmtV13);      // v13=Tooltip label
 
 		graphPosX = canvas_pos.x;
 		graphPosY = canvas_pos.y;
@@ -2298,6 +2299,7 @@ window.Chart = function (context) {
 
 			var totvalue = new Array();
 			var maxvalue = new Array();
+			var tooltip;
 
 			for (var i = 0; i < data.datasets.length; i++) { for (var j = 0; j < data.datasets[i].data.length; j++) { totvalue[j] = 0; maxvalue[j] = -999999999; } }
 			for (var i = 0; i < data.datasets.length; i++) { for (var j = 0; j < data.datasets[i].data.length; j++) { totvalue[j] += data.datasets[i].data[j]; maxvalue[j] = Max([maxvalue[j], data.datasets[i].data[j]]); } }
@@ -2331,31 +2333,40 @@ window.Chart = function (context) {
 						}
 					  }
 					  prevpt=j;
-					  if (animPc >= 1) {
-						if (i == 0) divprev = data.datasets[i].data[j];
-						else divprev = data.datasets[i].data[j] - data.datasets[i - 1].data[j];
-						if (i == data.datasets.length - 1) divnext = data.datasets[i].data[j];
-						else divnext = data.datasets[i].data[j] - data.datasets[i + 1].data[j];
 
-						if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
-						else lgtxt2 = "";
-						jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["POINT", xPos(j), yPos(i, j), lgtxt, lgtxt2, data.datasets[i].data[j], divprev, divnext, maxvalue[j], totvalue[j], i, j];
-						if (config.inGraphDataShow) {
-						  ctx.save();
-						  ctx.textAlign = config.inGraphDataAlign;
-						  ctx.textBaseline = config.inGraphDataVAlign;
-						  ctx.font = config.inGraphDataFontStyle + ' ' + config.inGraphDataFontSize + 'px ' + config.inGraphDataFontFamily;
-						  ctx.fillStyle = config.inGraphDataFontColor;
-						  var dotX = yAxisPosX + (valueHop *k),
-							dotY = xAxisPosY - animPc*(calculateOffset(config, data.datasets[i].data[j],calculatedScale,scaleHop)),
-							paddingTextX = config.inGraphDataPaddingX,
-							paddingTextY = config.inGraphDataPaddingY;
-						  var dispString = tmplbis(config.inGraphDataTmpl, { config:config, v1 : fmtChartJS(config,lgtxt,config.fmtV1), v2 : fmtChartJS(config,lgtxt2,config.fmtV2), v3 : fmtChartJS(config,data.datasets[i].data[j],config.fmtV3), v4 : fmtChartJS(config,divprev,config.fmtV4), v5 : fmtChartJS(config,divnext,config.fmtV5), v6 : fmtChartJS(config,maxvalue[j],config.fmtV6), v7 : fmtChartJS(config,totvalue[j],config.fmtV7), v8 : fmtChartJS(config,100 * data.datasets[i].data[j] / totvalue[j],config.fmtV8),v9 : fmtChartJS(config,yAxisPosX,config.fmtV9),v10 : fmtChartJS(config,xAxisPosY - (calculateOffset(config, data.datasets[i].data[j], calculatedScale, scaleHop)),config.fmtV10),v11 : fmtChartJS(config,i,config.fmtV11), v12 : fmtChartJS(config,j,config.fmtV12)});
-						  ctx.translate(xPos(j) + paddingTextX, yPos(i,j) - paddingTextY);
-						  ctx.rotate(config.inGraphDataRotate * (Math.PI / 180));
-						  ctx.fillText(dispString, 0,0);
-						  ctx.restore();
-						}
+					  if (animPc >= 1) {
+							if (i == 0) divprev = data.datasets[i].data[j];
+							else divprev = data.datasets[i].data[j] - data.datasets[i - 1].data[j];
+							if (i == data.datasets.length - 1) divnext = data.datasets[i].data[j];
+							else divnext = data.datasets[i].data[j] - data.datasets[i + 1].data[j];
+
+							if (typeof (data.labels[j]) == "string") lgtxt2 = data.labels[j].trim();
+							else lgtxt2 = "";
+
+							if (data.tooltips && data.tooltips.length && data.tooltips[j]) {
+								tooltip = data.tooltips[j];
+							} else {
+								tooltip = '';
+							}
+
+							jsGraphAnnotate[ctx.canvas.id][annotateCnt++] = ["POINT", xPos(j), yPos(i, j), lgtxt, lgtxt2, data.datasets[i].data[j], divprev, divnext, maxvalue[j], totvalue[j], i, j, tooltip];
+
+							if (config.inGraphDataShow) {
+							  ctx.save();
+							  ctx.textAlign = config.inGraphDataAlign;
+							  ctx.textBaseline = config.inGraphDataVAlign;
+							  ctx.font = config.inGraphDataFontStyle + ' ' + config.inGraphDataFontSize + 'px ' + config.inGraphDataFontFamily;
+							  ctx.fillStyle = config.inGraphDataFontColor;
+							  var dotX = yAxisPosX + (valueHop *k),
+								dotY = xAxisPosY - animPc*(calculateOffset(config, data.datasets[i].data[j],calculatedScale,scaleHop)),
+								paddingTextX = config.inGraphDataPaddingX,
+								paddingTextY = config.inGraphDataPaddingY;
+							  var dispString = tmplbis(config.inGraphDataTmpl, { config:config, v1 : fmtChartJS(config,lgtxt,config.fmtV1), v2 : fmtChartJS(config,lgtxt2,config.fmtV2), v3 : fmtChartJS(config,data.datasets[i].data[j],config.fmtV3), v4 : fmtChartJS(config,divprev,config.fmtV4), v5 : fmtChartJS(config,divnext,config.fmtV5), v6 : fmtChartJS(config,maxvalue[j],config.fmtV6), v7 : fmtChartJS(config,totvalue[j],config.fmtV7), v8 : fmtChartJS(config,100 * data.datasets[i].data[j] / totvalue[j],config.fmtV8),v9 : fmtChartJS(config,yAxisPosX,config.fmtV9),v10 : fmtChartJS(config,xAxisPosY - (calculateOffset(config, data.datasets[i].data[j], calculatedScale, scaleHop)),config.fmtV10),v11 : fmtChartJS(config,i,config.fmtV11), v12 : fmtChartJS(config,j,config.fmtV12)});
+							  ctx.translate(xPos(j) + paddingTextX, yPos(i,j) - paddingTextY);
+							  ctx.rotate(config.inGraphDataRotate * (Math.PI / 180));
+							  ctx.fillText(dispString, 0,0);
+							  ctx.restore();
+							}
 					  }
 					}
 				}
